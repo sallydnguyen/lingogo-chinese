@@ -20546,6 +20546,7 @@ async function startHskLevelExam(lvNum, opts = {}) {
   let submitted = false;
   let currentAtt = null;
   let newlyUnlockedInfo = null;
+  let curQIdx = 0;
 
   const getAllQuestions = () => {
     const list = [];
@@ -20692,121 +20693,183 @@ async function startHskLevelExam(lvNum, opts = {}) {
       ' trở lên sẽ tự động vượt cấp và mở khóa toàn bộ chuyên đề ' + level + '!'
     ) : null;
 
-    const sectionsWrap = h('div', { class: 'stack' });
-    const sectionDetailsEls = [];
-    (exam.sections || []).forEach((sec, secIdx) => {
-      const secQs = sec.questions || [];
-      const secDone = secQs.filter((q) => userAns[q.id] !== undefined).length;
-      const secOk = submitted ? secQs.filter((q) => userAns[q.id] === q.ans).length : 0;
+    const flatQs = [];
+    (exam.sections || []).forEach((sec) => {
+      (sec.questions || []).forEach((q) => {
+        flatQs.push({ q: q, sec: sec });
+      });
+    });
+    if (curQIdx >= flatQs.length) curQIdx = Math.max(0, flatQs.length - 1);
 
-      const secBodyNodes = [];
-      if (sec.desc) secBodyNodes.push(h('p', { class: 'small muted', style: { margin: 0 } }, sec.desc));
+    const sectionsWrap = h('div', { class: 'stack', style: { gap: '12px' } });
 
-      secQs.forEach((q, qIdx) => {
-        const chosen = userAns[q.id];
-        const isCorrect = submitted && chosen === q.ans;
-        const isWrong = submitted && chosen !== q.ans;
+    if (!submitted && flatQs.length) {
+      const navGrid = h('div', {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(36px, 1fr))',
+          gap: '6px',
+          padding: '10px',
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          borderRadius: '12px'
+        }
+      },
+        flatQs.map((item, idx) => {
+          const isCur = idx === curQIdx;
+          const isDone = userAns[item.q.id] !== undefined;
+          return h('button', {
+            type: 'button',
+            class: 'c30-nav-btn',
+            style: {
+              padding: '6px 0',
+              borderRadius: '8px',
+              fontSize: '.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: isCur ? '2px solid var(--teal)' : '1px solid var(--line)',
+              background: isDone ? 'var(--teal)' : (isCur ? 'rgba(15,82,87,.10)' : 'var(--sunk)'),
+              color: isDone ? '#fff' : (isCur ? 'var(--teal)' : 'var(--ink)')
+            },
+            onclick: () => { curQIdx = idx; renderExamPage(); }
+          }, String(idx + 1));
+        })
+      );
 
-        const qCard = h('div', {
-          class: 'panel stack',
-          style: {
-            padding: '12px',
-            borderRadius: '12px',
-            gap: '8px',
-            background: 'var(--surface)',
-            border: submitted ? (isCorrect ? '1.5px solid var(--good)' : '1.5px solid var(--bad)') : '1px solid var(--line)'
-          }
-        },
-          h('div', { class: 'row between wrap', style: { gap: '6px', alignItems: 'center' } },
-            h('span', { class: 'chip small', style: { fontWeight: 700, background: 'var(--sunk)' } }, 'Câu ' + (qIdx + 1) + '/' + secQs.length),
-            q.audioText ? h('button', {
+      const curItem = flatQs[curQIdx];
+      const q = curItem.q;
+      const sec = curItem.sec;
+      const chosen = userAns[q.id];
+
+      const qCard = h('div', {
+        class: 'panel stack',
+        style: {
+          padding: '16px',
+          borderRadius: '14px',
+          gap: '12px',
+          background: 'var(--surface)',
+          border: '1.5px solid rgba(15,82,87,.25)'
+        }
+      },
+        h('div', { class: 'row between wrap', style: { gap: '8px', alignItems: 'center' } },
+          h('span', { class: 'chip accent small', style: { fontWeight: 700 } }, sec.title),
+          h('span', { class: 'chip small', style: { fontWeight: 700 } }, 'Câu ' + (curQIdx + 1) + ' / ' + flatQs.length)
+        ),
+        q.audioText ? h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } },
+          h('button', {
+            type: 'button',
+            class: 'accent',
+            style: { fontWeight: 700, padding: '8px 14px', borderRadius: '10px' },
+            onclick: () => say('zh', q.audioText)
+          }, '🔊 Nghe câu hỏi')
+        ) : null,
+        q.passage ? h('div', {
+          class: 'panel',
+          lang: 'zh-Hans',
+          style: { padding: '12px', background: 'var(--sunk)', borderRadius: '10px', whiteSpace: 'pre-line', lineHeight: 1.65, fontSize: '1rem' }
+        }, q.passage) : null,
+        h('div', { style: { fontWeight: 600, fontSize: '1.02rem', lineHeight: 1.55, whiteSpace: 'pre-line' } }, q.prompt),
+        h('div', { class: 'stack', style: { gap: '8px' } },
+          (q.options || []).map((opt, oIdx) => {
+            const isSel = chosen === oIdx;
+            return h('button', {
               type: 'button',
-              class: 'ghost mini',
-              style: { fontSize: '.78rem', fontWeight: 700, border: '1px solid var(--teal)', color: 'var(--teal)' },
-              onclick: () => say('zh', q.audioText)
-            }, '🔊 Nghe audio') : null,
-            submitted ? h('span', { class: 'chip small ' + (isCorrect ? 'good' : 'warn'), style: { fontWeight: 700 } },
-              isCorrect ? '✓ Đúng' : (chosen === undefined ? '✗ Bỏ trống' : '✗ Sai')
-            ) : null
-          ),
-          q.passage ? h('div', { class: 'panel', lang: 'zh-Hans', style: { padding: '10px', background: 'var(--sunk)', borderRadius: '8px', whiteSpace: 'pre-line', lineHeight: 1.6, fontSize: '.92rem' } }, q.passage) : null,
-          h('div', { style: { fontWeight: 600, fontSize: '.94rem', lineHeight: 1.5, whiteSpace: 'pre-line' } }, q.prompt),
-          h('div', { class: 'stack', style: { gap: '6px' } },
-            ...(q.options || []).map((opt, oIdx) => {
-              const isSel = chosen === oIdx;
-              const isAns = oIdx === q.ans;
-              let bg = 'var(--sunk)';
-              let bd = '1px solid var(--line)';
-              if (submitted) {
+              style: {
+                width: '100%', textAlign: 'left', padding: '11px 14px', borderRadius: '10px',
+                background: isSel ? 'rgba(15,82,87,.14)' : 'var(--sunk)',
+                border: isSel ? '1.5px solid var(--teal)' : '1px solid var(--line)',
+                color: 'var(--ink)', fontSize: '.94rem', lineHeight: 1.45,
+                display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'
+              },
+              onclick: () => {
+                userAns[q.id] = oIdx;
+                renderExamPage();
+              }
+            },
+              h('span', { class: 'kbd', style: { flexShrink: 0, fontWeight: 700 } }, String.fromCharCode(65 + oIdx)),
+              h('span', { style: { flex: 1 } }, opt)
+            );
+          })
+        ),
+        h('div', { class: 'row between', style: { gap: '8px', marginTop: '4px' } },
+          h('button', {
+            type: 'button',
+            class: 'ghost',
+            disabled: curQIdx === 0,
+            style: { flex: 1, fontWeight: 600 },
+            onclick: () => { if (curQIdx > 0) { curQIdx--; renderExamPage(); } }
+          }, '‹ Câu trước'),
+          curQIdx < flatQs.length - 1
+            ? h('button', {
+                type: 'button',
+                class: 'primary',
+                style: { flex: 1, fontWeight: 700 },
+                onclick: () => { curQIdx++; renderExamPage(); }
+              }, 'Câu sau ›')
+            : h('button', {
+                type: 'button',
+                class: 'accent',
+                style: { flex: 1, fontWeight: 700 },
+                onclick: () => submitHskFn()
+              }, '📝 Nộp bài')
+        )
+      );
+
+      sectionsWrap.append(navGrid, qCard);
+    } else {
+      (exam.sections || []).forEach((sec) => {
+        const secQs = sec.questions || [];
+        const secOk = secQs.filter((q) => userAns[q.id] === q.ans).length;
+        const secBodyNodes = [];
+        secQs.forEach((q, qIdx) => {
+          const chosen = userAns[q.id];
+          const isCorrect = chosen === q.ans;
+          secBodyNodes.push(h('div', {
+            class: 'panel stack',
+            style: {
+              padding: '12px', borderRadius: '12px', gap: '8px', background: 'var(--surface)',
+              border: isCorrect ? '1.5px solid var(--good)' : '1.5px solid var(--bad)'
+            }
+          },
+            h('div', { class: 'row between wrap', style: { gap: '6px', alignItems: 'center' } },
+              h('span', { class: 'chip small', style: { fontWeight: 700 } }, 'Câu ' + (qIdx + 1) + '/' + secQs.length),
+              q.audioText ? h('button', { type: 'button', class: 'ghost mini', onclick: () => say('zh', q.audioText) }, '🔊 Nghe') : null,
+              h('span', { class: 'chip small ' + (isCorrect ? 'good' : 'warn'), style: { fontWeight: 700 } },
+                isCorrect ? '✓ Đúng' : (chosen === undefined ? '✗ Bỏ trống' : '✗ Sai')
+              )
+            ),
+            h('div', { style: { fontWeight: 600, fontSize: '.94rem', lineHeight: 1.5, whiteSpace: 'pre-line' } }, q.prompt),
+            h('div', { class: 'stack', style: { gap: '6px' } },
+              (q.options || []).map((opt, oIdx) => {
+                const isSel = chosen === oIdx;
+                const isAns = oIdx === q.ans;
+                let bg = 'var(--sunk)', bd = '1px solid var(--line)';
                 if (isAns) { bg = 'rgba(35,120,74,.14)'; bd = '1.5px solid var(--good)'; }
                 else if (isSel && !isAns) { bg = 'rgba(220,38,38,.12)'; bd = '1.5px solid var(--bad)'; }
-              } else if (isSel) {
-                bg = 'rgba(15,82,87,.12)';
-                bd = '1.5px solid var(--teal)';
-              }
-              return h('button', {
-                type: 'button',
-                disabled: submitted,
-                style: {
-                  width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: '10px',
-                  background: bg, border: bd, color: 'var(--ink)', fontSize: '.88rem', lineHeight: 1.4,
-                  display: 'flex', alignItems: 'center', gap: '8px', cursor: submitted ? 'default' : 'pointer'
-                },
-                onclick: () => {
-                  if (submitted) return;
-                  userAns[q.id] = oIdx;
-                  renderExamPage();
-                }
-              },
-                h('span', { class: 'kbd', style: { flexShrink: 0, fontWeight: 700 } }, String.fromCharCode(65 + oIdx)),
-                h('span', { style: { flex: 1 } }, opt)
-              );
-            })
-          ),
-          submitted && q.explain ? h('div', { class: 'small', style: { padding: '8px 10px', background: 'var(--sunk)', borderRadius: '8px', lineHeight: 1.45, color: 'var(--ink)' } },
-            h('b', { style: { color: 'var(--teal)' } }, '💡 Giải thích: '),
-            q.explain
-          ) : null
-        );
-        secBodyNodes.push(qCard);
+                return h('div', {
+                  style: { padding: '8px 10px', borderRadius: '8px', background: bg, border: bd, fontSize: '.86rem', display: 'flex', gap: '8px' }
+                }, h('b', {}, String.fromCharCode(65 + oIdx)), h('span', {}, opt));
+              })
+            ),
+            q.explain ? h('div', { class: 'small', style: { padding: '8px 10px', background: 'var(--sunk)', borderRadius: '8px' } },
+              h('b', { style: { color: 'var(--teal)' } }, '💡 Giải thích: '), q.explain
+            ) : null
+          ));
+        });
+        sectionsWrap.append(accordionItem({
+          cls: 'acc-card',
+          defaultOpen: true,
+          iconEl: sec.short,
+          title: sec.title,
+          subtitle: secQs.length + ' câu hỏi',
+          chips: [h('span', { class: 'chip ' + (secOk === secQs.length ? 'good' : 'warn') }, secOk + '/' + secQs.length + ' đúng')],
+          body: [h('div', { class: 'stack', style: { gap: '10px' } }, ...secBodyNodes)]
+        }));
       });
-
-      const accEl = accordionItem({
-        cls: 'acc-card',
-        open: secIdx === 0 || submitted,
-        iconEl: sec.short,
-        title: sec.title,
-        subtitle: secQs.length + ' câu hỏi',
-        chips: [h('span', { class: 'chip ' + (submitted ? (secOk === secQs.length ? 'good' : 'warn') : (secDone === secQs.length ? 'good' : '')) },
-          submitted ? (secOk + '/' + secQs.length + ' đúng') : (secDone + '/' + secQs.length)
-        )],
-        body: [h('div', { class: 'stack', style: { gap: '10px' } }, ...secBodyNodes)]
-      });
-
-      if (!submitted && secIdx < exam.sections.length - 1) {
-        const nextBtn = h('button', {
-          type: 'button',
-          class: 'ghost block',
-          style: { fontWeight: 700, marginTop: '4px', border: '1px solid var(--line)' },
-          onclick: () => {
-            accEl.open = false;
-            const nextSec = sectionDetailsEls[secIdx + 1];
-            if (nextSec) {
-              nextSec.open = true;
-              setTimeout(() => nextSec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-            }
-          }
-        }, 'Chuyển sang Phần ' + (secIdx + 2) + ' →');
-        accEl.querySelector('.acc-body').append(nextBtn);
-      }
-
-      sectionDetailsEls.push(accEl);
-      sectionsWrap.append(accEl);
-    });
+    }
 
     const toolbar = h('div', { class: 'acc-toolbar' },
-      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📋 ' + exam.sections.length + ' Phần thi ' + level + ' (' + totalQs + ' câu)'),
-      makeToggleAllBtn(() => sectionsWrap, 'details.acc-card', { labelOpen: '📖 Mở tất cả phần', labelClose: '📁 Thu gọn' })
+      h('span', { class: 'small muted', style: { fontWeight: 600 } }, '📋 Phòng thi ' + level + ' (' + totalQs + ' câu)')
     );
 
     submitHskFn = () => {
