@@ -1291,7 +1291,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261126-0041';
+const APP_BUILD_ID = '20261126-2305';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -1452,11 +1452,8 @@ function calcFinishEstimate(remTopics, remLessons, pace = STUDY_PACE, code = 'en
   } else if (pace === 'daily2') {
     topicsPerDay = 2; // 2 bài/ngày (14 bài/tuần)
   } else {
-    // Lịch xoay vòng 2-2-2-1 cân bằng 3 thứ tiếng:
-    // Tiếng Anh: T2, T5 (2 bài/tuần)
-    // Tiếng Trung: T3, T6 (2 bài/tuần)
-    // Tiếng Nhật: T4, T7 (2 bài/tuần)
-    topicsPerDay = 2 / 7;
+    // Lịch đều đặn T2–T7 (6 bài/tuần · Chủ Nhật tổng ôn nhẹ):
+    topicsPerDay = 6 / 7;
   }
 
   // Hệ số quy đổi số tiết học nhỏ sang số buổi học trọng tâm (mỗi buổi 25-30p):
@@ -1769,48 +1766,13 @@ const dayDate = (n) => new Date(n * 864e5);
 // ===== Lộ trình học thông minh: Phân bổ thứ trong tuần chống loạn ngôn ngữ =====
 // Thứ tự ưu tiên: Tiếng Anh (cao nhất) > Tiếng Trung (nhì) > Tiếng Nhật (ba)
 const WEEKLY_SCHEDULE = {
-  1: { // Thứ Hai
-    name: 'Thứ Hai', focus: 'en',
-    title: '🇬🇧 Thứ Hai: Trọng tâm Tiếng Anh (Nghe + Nói)',
-    desc: 'Học 1 bài mới Tiếng Anh (Hội thoại B2 & Phản xạ) · Tiếng Trung & Nhật ôn nhẹ gói 10 từ',
-    goals: { en: 2.0, zh: 0.5, ja: 0.5 }
-  },
-  2: { // Thứ Ba
-    name: 'Thứ Ba', focus: 'zh',
-    title: '🇨🇳 Thứ Ba: Trọng tâm Tiếng Trung (Đọc + Viết + Từ vựng)',
-    desc: 'Học 1 bài mới Tiếng Trung (Bộ thủ, Chiết tự & HSK) · Tiếng Anh & Nhật ôn nhẹ gói 10 từ',
-    goals: { zh: 2.0, en: 0.5, ja: 0.5 }
-  },
-  3: { // Thứ Tư
-    name: 'Thứ Tư', focus: 'ja',
-    title: '🇯🇵 Thứ Tư: Trọng tâm Tiếng Nhật (Giải trí + Nghe + Nhại giọng)',
-    desc: 'Học 1 bài mới Tiếng Nhật N5 & Luyện nghe/nhại giọng · Tiếng Anh & Trung ôn nhẹ gói 10 từ',
-    goals: { ja: 2.0, en: 0.5, zh: 0.5 }
-  },
-  4: { // Thứ Năm
-    name: 'Thứ Năm', focus: 'en',
-    title: '🇬🇧 Thứ Năm: Trọng tâm Tiếng Anh (Nghe + Nói)',
-    desc: 'Học 1 bài mới Tiếng Anh (Podcast & Giao tiếp thực tế) · Tiếng Trung & Nhật ôn nhẹ gói 10 từ',
-    goals: { en: 2.0, zh: 0.5, ja: 0.5 }
-  },
-  5: { // Thứ Sáu
-    name: 'Thứ Sáu', focus: 'zh',
-    title: '🇨🇳 Thứ Sáu: Trọng tâm Tiếng Trung (Đọc + Viết + Từ vựng)',
-    desc: 'Học 1 bài mới Tiếng Trung (Viết Hán tự & Ngữ pháp HSK) · Tiếng Anh & Nhật ôn nhẹ gói 10 từ',
-    goals: { zh: 2.0, en: 0.5, ja: 0.5 }
-  },
-  6: { // Thứ Bảy
-    name: 'Thứ Bảy', focus: 'ja',
-    title: '🇯🇵 Thứ Bảy: Trọng tâm Tiếng Nhật (Giải trí + Nghe + Nhại giọng)',
-    desc: 'Học 1 bài mới Tiếng Nhật N5 & Ôn Kanji · Tiếng Anh & Trung ôn nhẹ gói 10 từ',
-    goals: { ja: 2.0, en: 0.5, zh: 0.5 }
-  },
-  0: { // Chủ Nhật
-    name: 'Chủ Nhật', focus: 'all',
-    title: '🧘 Chủ Nhật: Tổng ôn nhẹ 3 ngôn ngữ hoặc Nghỉ ngơi',
-    desc: 'Không học bài mới · Ôn gói từ vựng dễ quên trong tuần của cả 3 tiếng',
-    goals: { en: 1.0, zh: 1.0, ja: 1.0 }
-  }
+  1: { name: 'Thứ Hai', focus: 'zh', title: '🇨🇳 Thứ Hai: Từ vựng & Bộ thủ', desc: 'Học 1 bài mới theo lộ trình HSK 3.0 + Ôn gói từ SRS', goals: { zh: 1.0 } },
+  2: { name: 'Thứ Ba', focus: 'zh', title: '🇨🇳 Thứ Ba: Chiết tự & Tập viết Hán tự', desc: 'Học 1 bài mới + Luyện viết chữ Hán & nhớ bộ thủ', goals: { zh: 1.0 } },
+  3: { name: 'Thứ Tư', focus: 'zh', title: '🇨🇳 Thứ Tư: Nghe hiểu & Luyện nói Pinyin', desc: 'Học 1 bài mới + Luyện phát âm thanh điệu & hội thoại', goals: { zh: 1.0 } },
+  4: { name: 'Thứ Năm', focus: 'zh', title: '🇨🇳 Thứ Năm: Đọc hiểu & Ngữ pháp HSK', desc: 'Học 1 bài mới + Thực hành mẫu câu và điền từ ngữ cảnh', goals: { zh: 1.0 } },
+  5: { name: 'Thứ Sáu', focus: 'zh', title: '🇨🇳 Thứ Sáu: Kỹ năng & Luyện thi HSK/HSKK', desc: 'Học 1 bài mới + Thực hành đề HSK viết & HSKK nói', goals: { zh: 1.0 } },
+  6: { name: 'Thứ Bảy', focus: 'zh', title: '🇨🇳 Thứ Bảy: Củng cố & Ôn tập SRS', desc: 'Học 1 bài mới + Ôn tập từ vựng & chữ Hán dễ quên', goals: { zh: 1.0 } },
+  0: { name: 'Chủ Nhật', focus: 'all', title: '🧘 Chủ Nhật: Tổng ôn nhẹ hoặc Nghỉ ngơi', desc: 'Không học bài mới · Ôn nhẹ gói từ vựng & chữ Hán trong tuần', goals: { zh: 1.0 } }
 };
 
 function getDaySchedule(d = todayN()) {
@@ -3278,12 +3240,12 @@ const listenBtns = (code, text) => h('div', { class: 'listen' },
   spk(code, text, { cls: 'big' }), spk(code, text, { slow: true, cls: 'big' }));
 // Nút ngôn ngữ đang học ở đầu trang: bấm để quay về màn hình chọn ngôn ngữ
 function langSwitch() {
-  return h('button', { class: 'langchip', 'aria-label': 'Đang học ' + L().short + '. Đổi ngôn ngữ', onclick: () => { PICK_HUB_OPEN = false; go('pick'); } },
-    h('span', { lang: L().lang }, L().label), h('span', { class: 'caret', 'aria-hidden': 'true' }, '▾'));
+  return h('button', { class: 'langchip', 'aria-label': 'Lộ trình & Thời gian biểu', title: 'Xem lộ trình học & tiến độ', onclick: () => { ROADMAP_LANG = 'zh'; PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); } },
+    h('span', {}, '🗺️ Lộ trình'));
 }
 
 // ===== Điều hướng =====
-let VIEW = 'pick'; // mở app là màn hình chọn ngôn ngữ
+let VIEW = 'home'; // mở thẳng vào trang học Tiếng Trung
 let SKILL_TAB = 'speak'; // 'speak' | 'write'
 let KNOWLEDGE_TAB = 'gram'; // 'gram' | 'chars' | 'kana'
 let EXAM_LV = { zh: 'HSK 1', ja: 'N5' };
@@ -3418,22 +3380,10 @@ function getUnifiedDaySlots(dayIdx) {
   const isSun = sch.focus === 'all';
   const baseItems = [
     {
-      code: 'en',
-      langTitle: '🇬🇧 Tiếng Anh (Giao tiếp & B2)',
-      focusTask: 'Học 1 bài mới (Giao tiếp / B2) + Luyện Nghe/Nói phản xạ & Ôn gói 15 từ.',
-      lightTask: 'Không học bài mới · Ôn nhanh gói 10 từ SRS để giữ phản xạ.'
-    },
-    {
       code: 'zh',
-      langTitle: '🇨🇳 Tiếng Trung (Bộ thủ & HSK)',
-      focusTask: 'Học 1 bài mới (Bộ thủ, Chiết tự & HSK) + Tập viết chữ Hán & Ôn gói 15 từ.',
-      lightTask: 'Không học bài mới · Ôn nhanh gói 10 từ/chữ Hán đã học.'
-    },
-    {
-      code: 'ja',
-      langTitle: '🇯🇵 Tiếng Nhật (Giải trí & N5)',
-      focusTask: 'Học 1 bài mới N5 + Nghe hội thoại / Nhại giọng & Ôn gói 15 từ.',
-      lightTask: 'Không học bài mới · Ôn nhẹ gói 10 từ Kana/Kanji đã học.'
+      langTitle: '🇨🇳 Tiếng Trung (Bộ thủ, Chiết tự & HSK 1–9)',
+      focusTask: sch.desc || 'Học 1 bài mới (Bộ thủ, Chiết tự & HSK) + Tập viết chữ Hán & Ôn gói từ SRS.',
+      lightTask: 'Ôn nhẹ gói từ vựng & chữ Hán đã học.'
     }
   ];
   const items = baseItems.map((s) => {
@@ -3506,7 +3456,7 @@ function renderProgressTabContent(t, sch) {
     h('div', { class: 'panel stack', style: { padding: '14px 16px', background: 'rgba(15,82,87,.08)', border: '1px solid var(--teal)', borderRadius: '14px', gap: '8px' } },
       h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
         h('span', { class: 'chip accent', style: { fontSize: '.75rem', fontWeight: 700 } }, '📅 Hôm nay học gì? · ' + sch.name),
-        h('span', { class: 'small muted', style: { fontWeight: 600 } }, isSunday ? '🧘 Nghỉ bài mới · Ôn nhẹ ngôn ngữ' : ('🎯 Trọng tâm: ' + LANGS[sch.focus].label))
+        h('span', { class: 'small muted', style: { fontWeight: 600 } }, isSunday ? '🧘 Nghỉ bài mới · Tổng ôn nhẹ' : ('🎯 Trọng tâm: ' + ((LANGS[sch.focus] && LANGS[sch.focus].label) || '中文')))
       ),
       h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(185px, 1fr))', gap: '6px' } },
         todayPlan.map((s) => {
@@ -3634,7 +3584,7 @@ function renderScheduleTabContent(t, sch) {
   const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // Thứ 2 -> Chủ Nhật
   const previewSch = WEEKLY_SCHEDULE[SCHED_PREVIEW_DAY] || sch;
   const previewSlots = getUnifiedDaySlots(SCHED_PREVIEW_DAY);
-  const shortDayNames = { 1: 'T2 (Anh)', 2: 'T3 (Trung)', 3: 'T4 (Nhật)', 4: 'T5 (Anh)', 5: 'T6 (Trung)', 6: 'T7 (Nhật)', 0: 'CN (Ôn)' };
+  const shortDayNames = { 1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6', 6: 'T7', 0: 'CN (Ôn)' };
 
   return [
     // 2. Bộ chọn Thứ trong tuần để xem hôm đó học gì
@@ -3725,11 +3675,11 @@ function renderScheduleTabContent(t, sch) {
       h('div', { class: 'panel stack', style: { background: 'rgba(15,82,87,.06)', borderTop: '1px solid var(--line)', borderRadius: 0, padding: '12px 14px', gap: '8px' } },
       h('div', { class: 'row', style: { alignItems: 'center', gap: '6px' } },
         h('span', { style: { fontSize: '1.2rem' } }, '🧭'),
-        h('b', { style: { fontSize: '1rem', color: 'var(--ink)' } }, 'Nguyên tắc Lịch Học Xoay Vòng (1 Ngôn Ngữ Học Mới + 2 Ngôn Ngữ Ôn Nhẹ)')
+        h('b', { style: { fontSize: '1rem', color: 'var(--ink)' } }, 'Nguyên tắc Học Tiếng Trung Đều Đặn Mỗi Ngày')
       ),
       h('div', { class: 'stack', style: { gap: '5px', fontSize: '.82rem', lineHeight: 1.55, color: 'var(--muted)' } },
-        h('div', {}, h('b', { style: { color: 'var(--ink)' } }, '• Mỗi ngày chỉ học bài mới của 1 ngôn ngữ: '), 'Xoay vòng T2 & T5 Tiếng Anh · T3 & T6 Tiếng Trung · T4 & T7 Tiếng Nhật · Chủ Nhật nghỉ bài mới.'),
-        h('div', {}, h('b', { style: { color: 'var(--ink)' } }, '• 2 ngôn ngữ còn lại chỉ ôn duy trì: '), 'Không học bài mới, chỉ ôn nhanh gói 10 từ SRS để giữ phản xạ và chuỗi ngày học.'),
+        h('div', {}, h('b', { style: { color: 'var(--ink)' } }, '• T2–T7 mỗi ngày học 1 bài mới: '), 'Kết hợp từ vựng, bộ thủ chiết tự, tập viết chữ Hán & luyện nói Pinyin.'),
+        h('div', {}, h('b', { style: { color: 'var(--ink)' } }, '• Chủ Nhật tổng ôn nhẹ: '), 'Không học bài mới, tập trung ôn nhanh gói từ & chữ Hán SRS để giữ trí nhớ dài hạn.'),
         h('div', {}, h('b', { style: { color: 'var(--ink)' } }, '• Ôn tập chia gói nhỏ (10–15 từ/buổi): '), 'Hệ thống tự lọc 10–15 từ dễ quên nhất mỗi ngày, số từ còn lại tự bảo lưu sang hôm sau.')
       )
     )),
@@ -3753,19 +3703,19 @@ function renderScheduleTabContent(t, sch) {
         h('div', { class: 'panel', style: { background: 'var(--surface)', border: '1px solid var(--teal)', borderRadius: '10px', padding: '10px' } },
           h('b', { style: { fontSize: '.84rem', color: 'var(--teal)' } }, '🌱 Giai đoạn 1 (Tháng 1–3): Nền tảng'),
           h('p', { class: 'small muted', style: { margin: '4px 0 0 0', fontSize: '.76rem', lineHeight: 1.5 } },
-            'Xây dựng phản xạ Tiếng Anh giao tiếp, nắm vững Bộ thủ & 10 bài đầu của Tiếng Trung (HSK 1–2) và Tiếng Nhật (N5).'
+            'Nắm vững Pinyin, thanh điệu, Bộ thủ & các bài nền tảng HSK 1–2 cùng tập viết chữ Hán cơ bản.'
           )
         ),
         h('div', { class: 'panel', style: { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '10px', padding: '10px' } },
-          h('b', { style: { fontSize: '.84rem', color: 'var(--amber)' } }, '⚡ Giai đoạn 2 (Tháng 4–6): Tăng tốc Nghe & Nói'),
+          h('b', { style: { fontSize: '.84rem', color: 'var(--amber)' } }, '⚡ Giai đoạn 2 (Tháng 4–6): Trung cấp HSK 3–4'),
           h('p', { class: 'small muted', style: { margin: '4px 0 0 0', fontSize: '.76rem', lineHeight: 1.5 } },
-            'Đẩy mạnh kỹ năng nghe hội thoại, Shadowing (nhại giọng) và ôn cuốn chiếu gói 10–15 từ dễ quên.'
+            'Mở rộng vốn chữ Hán qua Chiết tự, luyện đọc hội thoại dài và ôn cuốn chiếu gói 10–15 từ dễ quên.'
           )
         ),
         h('div', { class: 'panel', style: { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '10px', padding: '10px' } },
-          h('b', { style: { fontSize: '.84rem', color: 'var(--ink)' } }, '🔄 Giai đoạn 3 (Tháng 6+): Duy trì bền vững'),
+          h('b', { style: { fontSize: '.84rem', color: 'var(--ink)' } }, '🏆 Giai đoạn 3 (Tháng 6+): Chinh phục HSK 5–9 & HSKK'),
           h('p', { class: 'small muted', style: { margin: '4px 0 0 0', fontSize: '.76rem', lineHeight: 1.5 } },
-            'Duy trì đều đặn lịch xoay vòng 2-2-2-1: T2 & T5 Anh · T3 & T6 Trung · T4 & T7 Nhật · CN tổng ôn nhẹ.'
+            'Luyện đề HSK & HSKK các cấp độ cao, đọc hiểu chuyên sâu và duy trì ôn tập SRS.'
           )
         )
       )
@@ -4535,15 +4485,13 @@ function renderRoadmapTabContent(t) {
     return [renderIeltsFullDayView(IELTS_ACTIVE_DAY)];
   }
   const paces = [
-    { id: 'schedule', name: '📅 Lịch chuẩn (2-2-2-1)', desc: currentLang === 'en' ? 'T2, T5 (2 bài/tuần)' : (currentLang === 'zh' ? 'T3, T6 (2 bài/tuần)' : (currentLang === 'ja' ? 'T4, T7 (2 bài/tuần)' : 'Mỗi tiếng 2 bài/tuần · CN ôn tổng hợp')) },
+    { id: 'schedule', name: '📅 Lịch đều đặn (T2–T7)', desc: '6 bài/tuần · CN tổng ôn' },
     { id: 'daily1', name: '⚡ 1 bài/ngày', desc: '7 bài/tuần · Đều đặn mỗi ngày' },
     { id: 'daily2', name: '🔥 2 bài/ngày', desc: '14 bài/tuần · Tăng tốc bứt phá' }
   ];
 
   const langFilterPills = [
-    { id: S.lang, label: (LANGS[S.lang] ? LANGS[S.lang].label : 'Ngôn ngữ đang học') + ' (Đang học)' },
-    ...Object.entries(LANGS).filter(([c]) => c !== S.lang).map(([c, v]) => ({ id: c, label: v.label })),
-    { id: 'all', label: '🌐 Cả 3 ngôn ngữ' }
+    { id: 'zh', label: '🇨🇳 中文 (HSK 3.0)' }
   ];
 
   const targetLangs = currentLang === 'all'
@@ -4551,7 +4499,7 @@ function renderRoadmapTabContent(t) {
     : Object.entries(LANGS).filter(([c]) => c === currentLang);
 
   const headerSubtitle = currentLang === 'all'
-    ? 'Lộ trình cả 3 ngôn ngữ'
+    ? 'Lộ trình Tiếng Trung (HSK 3.0)'
     : ('Lộ trình ' + (LANGS[currentLang] ? LANGS[currentLang].label : ''));
 
   return [
@@ -4572,13 +4520,7 @@ function renderRoadmapTabContent(t) {
       ),
       h('p', { class: 'small muted', style: { margin: '2px 0 0 0', fontSize: '.76rem' } },
         STUDY_PACE === 'schedule'
-          ? (currentLang === 'en'
-              ? '💡 Lịch chuẩn Tiếng Anh (Thứ 2 & Thứ 5): Học 2 bài mới/tuần (Nghe + Nói & Giao tiếp B2), các ngày khác ôn gói 10 từ.'
-              : (currentLang === 'zh'
-                ? '💡 Lịch chuẩn Tiếng Trung (Thứ 3 & Thứ 6): Học 2 bài mới/tuần (Bộ thủ, Chiết tự & HSK), các ngày khác ôn gói 10 từ.'
-                : (currentLang === 'ja'
-                  ? '💡 Lịch chuẩn Tiếng Nhật (Thứ 4 & Thứ 7): Học 2 bài mới/tuần (Nghe hội thoại & N5), các ngày khác ôn gói 10 từ.'
-                  : '💡 Lịch xoay vòng 2-2-2-1: Anh (T2, T5) · Trung (T3, T6) · Nhật (T4, T7) · Chủ nhật tổng ôn nhẹ.')))
+          ? '💡 Lịch đều đặn (Thứ 2 – Thứ 7): Học 6 bài mới/tuần kết hợp tập viết & ôn SRS · Chủ Nhật tổng ôn nhẹ.'
           : (STUDY_PACE === 'daily1'
               ? '💡 Tốc độ 1 bài/ngày: Mỗi ngày hoàn thành trọn vẹn 1 bài cho ngôn ngữ trọng tâm.'
               : '💡 Tốc độ 2 bài/ngày: Cường độ cao, hoàn thành 2 bài mỗi ngày giúp rút ngắn một nửa thời gian.')
@@ -4759,6 +4701,7 @@ function pickView() {
     }
   }
 
+  PICK_HUB_OPEN = true;
   if (!PICK_HUB_OPEN) {
     const langChoices = h('div', { class: 'langpick' },
       ...Object.keys(LANGS).map((c) => {
@@ -4789,7 +4732,7 @@ function pickView() {
 
     mount(h('div', { class: 'stack-lg', style: { paddingTop: '16px' } },
       h('div', { class: 'stack', style: { gap: '4px' } },
-        h('p', { class: 'label' }, 'Lingogo'),
+        h('p', { class: 'label' }, 'Lingogo Chinese'),
         h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')
       ),
       langChoices,
@@ -4800,7 +4743,7 @@ function pickView() {
 
   const tabsBar = h('div', { class: 'pick-tabs', role: 'tablist' },
     [
-      ['progress', '📊 Tiến độ ngôn ngữ'],
+      ['progress', '📊 Tiến độ Tiếng Trung'],
       ['schedule', '📅 Thời gian biểu'],
       ['roadmap', '🚀 Lộ trình & Cán đích']
     ].map(([id, label]) => h('button', {
@@ -4825,8 +4768,8 @@ function pickView() {
       h('button', {
         class: 'btn ghost',
         style: { minHeight: '36px', padding: '6px 14px', fontSize: '.85rem' },
-        onclick: () => { PICK_HUB_OPEN = false; pickView(); }
-      }, '← Quay lại chọn ngôn ngữ'),
+        onclick: () => { PICK_HUB_OPEN = false; go('home'); }
+      }, '← Về trang Học'),
       h('span', { class: 'small muted' }, '🗺️ Lộ trình & Tiến độ')
     ),
     tabsBar,
@@ -4842,17 +4785,16 @@ function welcomeView() {
   const goals = h('div', { class: 'options' }), langs = h('div', { class: 'langs' });
   let start;
   const draw = () => {
-    goals.replaceChildren(...[[20, 'Tối thiểu', '20 XP ≈ 4 từ mới mỗi thứ tiếng'], [30, 'Vừa phải', '30 XP mỗi thứ tiếng'], [50, 'Nghiêm túc', '50 XP mỗi thứ tiếng']]
+    goals.replaceChildren(...[[20, 'Tối thiểu', '20 XP ≈ 4 từ mới mỗi ngày'], [30, 'Vừa phải', '30 XP mỗi ngày'], [50, 'Nghiêm túc', '50 XP mỗi ngày']]
       .map(([v, t, s]) => h('button', { 'aria-pressed': String(goal === v), onclick: () => { goal = v; draw(); } }, h('span', {}, h('b', {}, t), ' · ', h('span', { class: 'muted' }, s)))));
-    langs.replaceChildren(...Object.entries(LANGS).map(([k, v]) => h('button', { 'aria-pressed': String(lang === k), lang: v.lang, onclick: () => { lang = k; draw(); start.textContent = 'Bắt đầu học ' + LANGS[lang].short; } }, v.label)));
   };
   draw();
   const had = Object.keys(S.days).length > 0;
   mount(h('div', { class: 'stack-lg', style: { paddingTop: '24px' } },
     h('div', { class: 'stack' },
-      h('p', { class: 'label' }, 'Lingogo'),
+      h('p', { class: 'label' }, 'Lingogo Chinese'),
       h('h1', {}, 'Học để nói được, mỗi ngày một chút'),
-      h('p', { class: 'muted' }, 'Ba thứ tiếng trong một app: bài học theo chủ đề, ôn tập đúng lúc, luyện nói và tập viết chữ Hán, kana.'),
+      h('p', { class: 'muted' }, 'Học Tiếng Trung từ nền tảng đến nâng cao (HSK 1–9): từ vựng theo chủ đề, bộ thủ & chiết tự, tập viết chữ Hán, luyện nói & đề thi HSK/HSKK.'),
       had && h('p', { class: 'note' }, 'Đã có tiến độ cũ của bạn. Bạn sẽ học tiếp từ chỗ đã dừng.')),
     h('div', { style: { background: 'var(--sunk)', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' } },
       h('div', { style: { minWidth: 0, flex: 1 } },
@@ -4862,9 +4804,8 @@ function welcomeView() {
       h('button', { class: 'primary mini', onclick: showSyncModal }, 'Đồng bộ ngay')
     ),
     h('div', { class: 'stack' }, h('label', { for: 'name', class: 'label' }, 'Tên của bạn'), name),
-    h('div', { class: 'stack' }, h('span', { class: 'label' }, 'Bạn muốn học thứ tiếng nào trước?'), langs, h('p', { class: 'small muted' }, 'Có thể đổi sang thứ tiếng khác bất cứ lúc nào.')),
-    h('div', { class: 'stack' }, h('span', { class: 'label' }, 'Mục tiêu mỗi ngày, cho từng thứ tiếng'), goals),
-    (start = h('button', { class: 'primary block', onclick: () => { S.name = name.value.trim() || 'bạn'; S.goal = goal; S.lang = lang; save(); go('home'); } }, 'Bắt đầu học ' + LANGS[lang].short))));
+    h('div', { class: 'stack' }, h('span', { class: 'label' }, 'Mục tiêu mỗi ngày'), goals),
+    (start = h('button', { class: 'primary block', onclick: () => { S.name = name.value.trim() || 'bạn'; S.goal = goal; S.lang = 'zh'; save(); go('home'); } }, 'Bắt đầu học Tiếng Trung'))));
 }
 
 // ===== Trang Học =====
@@ -5874,7 +5815,7 @@ function homeView() {
       });
       return wrap;
     })(),
-    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo v4.00 · Cập nhật 21/11/2026')));
+    h('p', { class: 'small muted center', style: { margin: '24px 0 12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.01 · Cập nhật 26/11/2026')));
 }
 
 // ===== HỆ THỐNG LUYỆN THI IELTS 4 KỸ NĂNG (TIẾNG ANH) =====
@@ -14212,7 +14153,7 @@ function reviewView(forceExtra = false) {
         }, '🔄 Tôi muốn ôn thêm 1 gói ' + Math.min(REVIEW_BATCH_SIZE, totalVaultDue) + ' từ nữa (Tự chọn)') : null,
         h('div', { class: 'row center wrap', style: { gap: '8px', marginTop: '8px' } },
           h('button', { class: 'primary', onclick: () => go('home') }, 'Về trang Học'),
-          h('button', { class: 'ghost', onclick: () => go('pick') }, 'Về Màn hình chính')
+          h('button', { class: 'ghost', onclick: () => { PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); } }, '🗺️ Xem lộ trình')
         )
       ),
       reviewFooter()
@@ -14260,7 +14201,7 @@ function reviewView(forceExtra = false) {
             : ('🔄 Ôn thêm 1 gói ' + Math.min(REVIEW_BATCH_SIZE, afterVault) + ' từ nữa (Tự chọn)')) : null,
           h('div', { class: 'row center wrap', style: { gap: '8px', marginTop: '12px' } },
             h('button', { class: 'primary', onclick: () => go('home') }, 'Về trang Học'),
-          h('button', { class: 'ghost', onclick: () => go('pick') }, 'Về Màn hình chính')
+          h('button', { class: 'ghost', onclick: () => { PICK_TAB = 'roadmap'; PICK_HUB_OPEN = true; go('pick'); } }, '🗺️ Xem lộ trình')
           )
         ),
         reviewFooter()
@@ -17442,7 +17383,7 @@ function renderEnglishKnowledgeView() {
             ),
             h('div', { class: 'panel', style: { background: 'var(--sunk)', borderRadius: '10px', padding: '12px' } },
               h('b', {}, '3. Nói đè đồng thời (Simultaneous Shadowing): '),
-              h('span', { class: 'small' }, 'Sau khi quen, bật audio chạy liên tục và nói đè cùng lúc với audio với độ trễ dưới 0.3 giây. Luyện tập 15–20 phút mỗi ngày trong tab Học của Lingogo sẽ giúp bạn nói mượt mà, không còn khựng lại dịch thầm trong đầu.')
+              h('span', { class: 'small' }, 'Sau khi quen, bật audio chạy liên tục và nói đè cùng lúc với audio với độ trễ dưới 0.3 giây. Luyện tập 15–20 phút mỗi ngày trong tab Học của Lingogo Chinese sẽ giúp bạn nói mượt mà, không còn khựng lại dịch thầm trong đầu.')
             )
           )
         )
@@ -17574,7 +17515,7 @@ function renderEnglishKnowledgeView() {
           h('div', { class: 'panel', style: { background: 'var(--sunk)', borderRadius: '10px', padding: '12px', gap: '6px' } },
             h('b', { style: { color: 'var(--teal)' } }, '🔄 Bí quyết 2: Lặp lại ngắt quãng (Spaced Repetition)'),
             h('p', { class: 'small', style: { margin: '4px 0 0 0', lineHeight: 1.5 } },
-              'Theo đường cong lãng quên của Hermann Ebbinghaus, não người quên 70% kiến thức mới sau 24 giờ. Ôn tập đúng các điểm vàng (sau 1 ngày ➔ 3 ngày ➔ 7 ngày ➔ 14 ngày ➔ 30 ngày) sẽ chuyển từ vựng từ vùng nhớ tạm thời sang vùng trí nhớ vĩnh viễn. Tab Ôn tập của Lingogo tự động áp dụng quy luật này để nhắc nhở bạn.'
+              'Theo đường cong lãng quên của Hermann Ebbinghaus, não người quên 70% kiến thức mới sau 24 giờ. Ôn tập đúng các điểm vàng (sau 1 ngày ➔ 3 ngày ➔ 7 ngày ➔ 14 ngày ➔ 30 ngày) sẽ chuyển từ vựng từ vùng nhớ tạm thời sang vùng trí nhớ vĩnh viễn. Tab Ôn tập của Lingogo Chinese tự động áp dụng quy luật này để nhắc nhở bạn.'
             )
           )
         )
@@ -21112,13 +21053,12 @@ function kanjiView(t) {
 // ===== Thành tích và tiến độ =====
 const ACH = [
   ['first', 'Bước đầu tiên', 'Hoàn thành bài học đầu tiên', () => Object.keys(S.lessons).length >= 1],
-  ['streak3', 'Ba ngày liền', 'Đạt mục tiêu một thứ tiếng 3 ngày liên tiếp', () => Object.keys(LANGS).some((c) => streak(c) >= 3)],
-  ['streak7', 'Một tuần bền bỉ', 'Đạt mục tiêu một thứ tiếng 7 ngày liên tiếp', () => Object.keys(LANGS).some((c) => streak(c) >= 7)],
-  ['goal3', 'Đủ cả ba', 'Một ngày đạt mục tiêu cả Anh, Trung, Nhật', () => Object.keys(LANGS).every((c) => metGoal(todayN(), c))],
+  ['streak3', 'Ba ngày liền', 'Đạt mục tiêu Tiếng Trung 3 ngày liên tiếp', () => streak('zh') >= 3],
+  ['streak7', 'Một tuần bền bỉ', 'Đạt mục tiêu Tiếng Trung 7 ngày liên tiếp', () => streak('zh') >= 7],
   ['words100', 'Trăm từ', '100 từ trong hàng ôn tập', () => Object.keys(S.srs).filter((k) => /:(w|v)/.test(k)).length >= 100],
-  ['polyglot', 'Ba thứ tiếng', 'Học ít nhất một bài mỗi thứ tiếng', () => ['en', 'zh', 'ja'].every((c) => Object.keys(S.lessons).some((k) => k.startsWith(c + ':')))],
+  ['lessons10', 'Chăm chỉ', 'Hoàn thành 10 bài học Tiếng Trung', () => Object.keys(S.lessons).filter((k) => k.startsWith('zh:')).length >= 10],
   ['speak20', 'Dám mở lời', 'Nói đạt từ 80% ở 20 câu', () => Object.values(S.spoken).filter((v) => v >= 80).length >= 20],
-  ['write50', 'Nắn nót', 'Tập viết 50 chữ khác nhau', () => Object.keys(S.written).length >= 50],
+  ['write50', 'Nắn nót', 'Tập viết 50 chữ Hán khác nhau', () => Object.keys(S.written).length >= 50],
 ];
 function checkAch() { for (const [code, title, , test] of ACH) if (!S.ach[code] && test()) { S.ach[code] = todayN(); save(); setTimeout(() => toast('Thành tích mới: ' + title), 400); } }
 // ===== Chuyển tiến độ giữa bản trên Claude và bản web (mã chữ, gộp không ghi đè) =====
@@ -21546,7 +21486,7 @@ function showFeedbackModal(customCtx) {
     const tagObj = TAGS.find(t => t.id === selectedTag) || TAGS[0];
     const desc = textarea.value.trim() || 'Không có mô tả chi tiết';
     return (
-      `### 💬 [Báo lỗi Lingogo] ${tagObj.label}\n` +
+      `### 💬 [Báo lỗi Lingogo Chinese] ${tagObj.label}\n` +
       `- **Ngôn ngữ:** ${langName} (${S.lang})\n` +
       `- **Vị trí bài học:** ${locText}\n` +
       `- **Thiết bị:** ${device} · ${browser} (${window.innerWidth}x${window.innerHeight})\n` +
@@ -21738,7 +21678,7 @@ function progressView() {
   const smartSchedCheck = h('input', { type: 'checkbox', id: 'smartSched', checked: S.smartSchedule !== false, onchange: (e) => { S.smartSchedule = e.target.checked; save(); toast('Đã cập nhật chế độ lộ trình.'); progressView(); } });
   let confirmReset = false;
   const resetBtn = h('button', { class: 'ghost block', onclick: async () => {
-    if (!confirmReset) { confirmReset = true; resetBtn.textContent = 'Bấm lần nữa để xóa toàn bộ tiến độ của cả ba thứ tiếng'; return; }
+    if (!confirmReset) { confirmReset = true; resetBtn.textContent = 'Bấm lần nữa để xóa toàn bộ tiến độ học Tiếng Trung'; return; }
     const resetTime = Date.now();
     S = fresh();
     S.delAll = resetTime;

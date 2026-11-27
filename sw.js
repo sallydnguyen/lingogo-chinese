@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lingogo-chinese-offline-v1';
+const CACHE_NAME = 'lingogo-chinese-offline-v2';
 const CORE_ASSETS = ['./', './index.html', './version.json', './data/zh.json'];
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(CORE_ASSETS).catch(() => {}))); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
