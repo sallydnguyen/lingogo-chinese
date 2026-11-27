@@ -1,5 +1,5 @@
 {
-  "version": "4.02",
-  "build": "20261127-0415",
-  "message": "Đồng bộ giao diện Duolingo Section/Unit, 5 tab điều hướng, Flashcard 3D & Từ điển Trung theo Lingogo English"
+  "version": "4.03",
+  "build": "20261127-0425",
+  "message": "Đảo kiểu hiển thị: Section tô nền đậm, Unit viền màu nổi bật"
 }
