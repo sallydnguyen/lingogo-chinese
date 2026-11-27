@@ -1,5 +1,5 @@
 {
-  "version": "4.06",
-  "build": "20261127-0440",
-  "message": "Sửa hàm h() hỗ trợ biến CSS (--sec-col, --unit-col, --duo-x) để hiện đúng 9 màu Section, viền Unit và đường cong S-path"
+  "version": "4.07",
+  "build": "20261127-0452",
+  "message": "Đổi toàn bộ nhãn XP sang thời gian thực học (phút/giây) và bỏ cộng nhầm phút khi luyện nói"
 }

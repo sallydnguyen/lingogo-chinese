@@ -1172,12 +1172,12 @@ NEW_HOME_VIEW = """function homeView(opts = {}) {
           : h('span', { class: 'chip', style: { fontSize: '.72rem', marginRight: '6px' } }, '⚡ Duy trì'),
         h('span', { style: { fontWeight: 600 } }, xp >= g ? 'Đã đạt mục tiêu hôm nay' : 'Học hôm nay')
       ),
-      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút')
+      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút' + (xp === 0 && STUDY_SEC > 0 ? ' (' + STUDY_SEC + 's)' : ''))
     ),
     h('div', { class: 'bar', role: 'progressbar', 'aria-label': 'Mục tiêu hôm nay', 'aria-valuenow': xp, 'aria-valuemax': g }, gf),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, st), h('span', {}, 'ngày liên tục')),
-      h('div', { class: 'stat' }, h('b', {}, xp + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, xp > 0 ? (xp + 'p') : (STUDY_SEC > 0 ? (STUDY_SEC + 's') : '0p')), h('span', {}, 'thực học hôm nay')),
       h('div', { class: 'stat' }, h('b', {}, due), h('span', {}, 'từ cần ôn'))
     ),
     nx ? h('button', { class: 'primary block', onclick: () => lessonView(nx.t, nx.i) },
@@ -2398,7 +2398,92 @@ def main() -> None:
     )
     html = replace_exact(html, "function progressView() {\n  const t = todayN()", "function progressView() {\n  ACTIVE_STUDY_MODE = false;\n  const t = todayN()", label="progressView study false")
 
-    # 14. Branding copy, ACH, feedback title, Progress tab (study minutes + onboarding)
+    # 14. Branding copy, ACH, feedback title, Progress tab (study minutes + onboarding) + replace all XP labels with actual study time
+    html = replace_exact(
+        html,
+        "      h('span', { style: { fontWeight: 600 } }, 'XP 7 ngày qua:'),\n"
+        "      h('span', {}, 'Mục tiêu hôm nay: ' + g + ' XP')\n"
+        "    ),\n"
+        "    h('div', { class: 'mini-week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' XP').join(', ') },\n"
+        "      days.map((d) => {\n"
+        "        const val = xd(d);\n"
+        "        const isToday = d === t;\n"
+        "        const pct = Math.min(100, Math.round((val / max) * 100));\n"
+        "        return h('div', { class: 'mini-day' + (isToday ? ' today' : '') + (val >= g ? ' met' : ''), title: wd[dayDate(d).getUTCDay()] + ': ' + val + ' XP' },",
+        "      h('span', { style: { fontWeight: 600 } }, 'Thời gian học 7 ngày qua:'),\n"
+        "      h('span', {}, 'Mục tiêu hôm nay: ' + g + ' phút')\n"
+        "    ),\n"
+        "    h('div', { class: 'mini-week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' phút').join(', ') },\n"
+        "      days.map((d) => {\n"
+        "        const val = xd(d);\n"
+        "        const isToday = d === t;\n"
+        "        const pct = Math.min(100, Math.round((val / max) * 100));\n"
+        "        return h('div', { class: 'mini-day' + (isToday ? ' today' : '') + (val >= g ? ' met' : ''), title: wd[dayDate(d).getUTCDay()] + ': ' + val + ' phút' },",
+        label="renderMiniWeekChart study time labels",
+    )
+    html = replace_exact(
+        html,
+        "          subtitle: x + '/' + g + ' XP · 🔥 ' + st + 'd · ' + prog.totalTopicsDone + '/' + prog.totalAllTopics + ' bài (' + prog.pct + '%)',\n"
+        "          chips: [\n"
+        "            isFocus ? h('span', { class: 'chip accent', style: { fontSize: '.68rem' } }, '🎯 Trọng tâm') : (langEntries.length > 1 ? h('span', { class: 'chip', style: { fontSize: '.68rem' } }, '⚡ Duy trì') : null),\n"
+        "            h('span', { class: 'chip' + (isMet ? ' good' : ''), style: { fontSize: '.72rem', fontWeight: 600 } }, isMet ? '✓ Đạt' : 'Còn ' + (g - x) + ' XP')\n"
+        "          ],\n"
+        "          body: [\n"
+        "            h('p', { class: 'small muted', style: { margin: 0, fontSize: '.78rem' } }, SUBTITLE[c]),\n"
+        "            h('div', { class: 'stats', style: { gridTemplateColumns: 'repeat(3, 1fr)', margin: 0 } },\n"
+        "              h('div', { class: 'stat', style: { padding: '8px 4px' } },\n"
+        "                h('b', { style: { fontSize: '.95rem' } }, x + '/' + g),\n"
+        "                h('span', { style: { fontSize: '.72rem' } }, 'XP hôm nay')",
+        "          subtitle: x + '/' + g + ' phút · 🔥 ' + st + 'd · ' + prog.totalTopicsDone + '/' + prog.totalAllTopics + ' bài (' + prog.pct + '%)',\n"
+        "          chips: [\n"
+        "            isFocus ? h('span', { class: 'chip accent', style: { fontSize: '.68rem' } }, '🎯 Trọng tâm') : (langEntries.length > 1 ? h('span', { class: 'chip', style: { fontSize: '.68rem' } }, '⚡ Duy trì') : null),\n"
+        "            h('span', { class: 'chip' + (isMet ? ' good' : ''), style: { fontSize: '.72rem', fontWeight: 600 } }, isMet ? '✓ Đạt' : 'Còn ' + (g - x) + ' phút')\n"
+        "          ],\n"
+        "          body: [\n"
+        "            h('p', { class: 'small muted', style: { margin: 0, fontSize: '.78rem' } }, SUBTITLE[c]),\n"
+        "            h('div', { class: 'stats', style: { gridTemplateColumns: 'repeat(3, 1fr)', margin: 0 } },\n"
+        "              h('div', { class: 'stat', style: { padding: '8px 4px' } },\n"
+        "                h('b', { style: { fontSize: '.95rem' } }, x + '/' + g + 'p'),\n"
+        "                h('span', { style: { fontSize: '.72rem' } }, 'Thực học hôm nay')",
+        label="renderProgressTabContent study time labels",
+    )
+    html = replace_exact(
+        html,
+        "h('strong', {}, isOk ? '✓ Chính xác! +2 XP' : '✗ Chưa đúng · Đáp án: ' + q.answer),",
+        "h('strong', {}, isOk ? '✓ Chính xác!' : '✗ Chưa đúng · Đáp án: ' + q.answer),",
+        label="inline quiz remove +2 XP",
+    )
+    html = replace_exact(
+        html,
+        "addXp(score >= 70 ? XP_ITEM : 1, code);",
+        "addXp(0, code);",
+        count=2,
+        label="speaking check no fake +1 minute",
+    )
+    html = replace_exact(
+        html,
+        "addXp(score >= 70 ? XP_ITEM : 1, 'zh');",
+        "addXp(0, 'zh');",
+        label="zh speaking check no fake +1 minute",
+    )
+    html = replace_exact(
+        html,
+        "  let done = 0;\n  if (LANGS[code] && LANGS[code].cjk) loadStrokes(code);",
+        "  let done = 0;\n  const lessonStartMs = Date.now();\n  if (LANGS[code] && LANGS[code].cjk) loadStrokes(code);",
+        label="lessonView start timestamp",
+    )
+    html = replace_exact(
+        html,
+        "      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), ' · +' + xp + ' XP' + (repeat && !catExam ? ' (học lại: nửa XP)' : '')),",
+        "      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), ' · ⏱️ ' + (() => { const s = Math.max(1, Math.round((Date.now() - lessonStartMs) / 1000)); return s >= 60 ? (Math.floor(s / 60) + ' phút' + (s % 60 ? ' ' + (s % 60) + ' giây' : '')) : (s + ' giây'); })()),",
+        label="lessonView finish duration label",
+    )
+    html = replace_exact(
+        html,
+        "      h('p', {}, 'Hôm nay ' + LANGS[code].short + ': ' + xpOf(todayN(), code) + '/' + goal() + ' XP · chuỗi ' + streak(code) + ' ngày'),",
+        "      h('p', {}, 'Thực học hôm nay: ' + (xpOf(todayN(), code) > 0 ? (xpOf(todayN(), code) + '/' + goal() + ' phút') : (STUDY_SEC > 0 ? (STUDY_SEC + ' giây / ' + goal() + ' phút') : ('0/' + goal() + ' phút'))) + ' · chuỗi ' + streak(code) + ' ngày'),",
+        label="lessonView finish today time label",
+    )
     html = replace_exact(html, "tab Học của Lingogo", "tab Học của Lingogo Chinese", label="knowledge tip 1")
     html = replace_exact(html, "Tab Ôn tập của Lingogo", "Tab Ôn tập của Lingogo Chinese", label="knowledge tip 2")
     html = replace_exact(
@@ -2483,7 +2568,7 @@ def main() -> None:
         "    ),\n"
         "    h('div', { class: 'stats' },\n"
         "      h('div', { class: 'stat' }, h('b', {}, streak(c0)), h('span', {}, 'chuỗi ngày · dài nhất ' + longest(c0))),\n"
-        "      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) + '/' + goal() + 'p'), h('span', {}, 'phút hôm nay')),\n"
+        "      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) > 0 ? (xpOf(t, c0) + '/' + goal() + 'p') : (STUDY_SEC > 0 ? (STUDY_SEC + 's/' + goal() + 'p') : ('0/' + goal() + 'p'))), h('span', {}, 'thực học hôm nay')),\n"
         "      h('div', { class: 'stat' }, h('b', {}, xpTotal(c0) + 'p'), h('span', {}, 'tổng thời gian học'))),\n"
         "    h('div', { class: 'stats' },\n"
         "      h('div', { class: 'stat' }, h('b', {}, Object.keys(S.lessons).filter((k) => k.startsWith(c0 + ':')).length), h('span', {}, 'bài đã học')),\n"

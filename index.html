@@ -1463,7 +1463,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0440';
+const APP_BUILD_ID = '20261127-0452';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -1668,15 +1668,15 @@ function renderMiniWeekChart(code, t) {
 
   return h('div', { class: 'mini-week-box' },
     h('div', { class: 'row between', style: { marginBottom: '3px', fontSize: '.74rem', color: 'var(--muted)' } },
-      h('span', { style: { fontWeight: 600 } }, 'XP 7 ngày qua:'),
-      h('span', {}, 'Mục tiêu hôm nay: ' + g + ' XP')
+      h('span', { style: { fontWeight: 600 } }, 'Thời gian học 7 ngày qua:'),
+      h('span', {}, 'Mục tiêu hôm nay: ' + g + ' phút')
     ),
-    h('div', { class: 'mini-week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' XP').join(', ') },
+    h('div', { class: 'mini-week', role: 'img', 'aria-label': days.map((d) => wd[dayDate(d).getUTCDay()] + ': ' + xd(d) + ' phút').join(', ') },
       days.map((d) => {
         const val = xd(d);
         const isToday = d === t;
         const pct = Math.min(100, Math.round((val / max) * 100));
-        return h('div', { class: 'mini-day' + (isToday ? ' today' : '') + (val >= g ? ' met' : ''), title: wd[dayDate(d).getUTCDay()] + ': ' + val + ' XP' },
+        return h('div', { class: 'mini-day' + (isToday ? ' today' : '') + (val >= g ? ' met' : ''), title: wd[dayDate(d).getUTCDay()] + ': ' + val + ' phút' },
           h('span', { class: 'mini-val' }, val > 0 ? val : ''),
           h('div', { class: 'mini-bar-wrap' },
             h('i', { style: { height: Math.max(pct > 0 ? 12 : 4, pct) + '%' } })
@@ -3775,17 +3775,17 @@ function renderProgressTabContent(t, sch) {
           },
           iconEl: h('span', { class: 'glyph', lang: v.lang, 'aria-hidden': 'true', style: { fontSize: '1.35rem', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', background: 'var(--sunk)', fontWeight: 800, flexShrink: 0 } }, GLYPH[c]),
           title: v.label,
-          subtitle: x + '/' + g + ' XP · 🔥 ' + st + 'd · ' + prog.totalTopicsDone + '/' + prog.totalAllTopics + ' bài (' + prog.pct + '%)',
+          subtitle: x + '/' + g + ' phút · 🔥 ' + st + 'd · ' + prog.totalTopicsDone + '/' + prog.totalAllTopics + ' bài (' + prog.pct + '%)',
           chips: [
             isFocus ? h('span', { class: 'chip accent', style: { fontSize: '.68rem' } }, '🎯 Trọng tâm') : (langEntries.length > 1 ? h('span', { class: 'chip', style: { fontSize: '.68rem' } }, '⚡ Duy trì') : null),
-            h('span', { class: 'chip' + (isMet ? ' good' : ''), style: { fontSize: '.72rem', fontWeight: 600 } }, isMet ? '✓ Đạt' : 'Còn ' + (g - x) + ' XP')
+            h('span', { class: 'chip' + (isMet ? ' good' : ''), style: { fontSize: '.72rem', fontWeight: 600 } }, isMet ? '✓ Đạt' : 'Còn ' + (g - x) + ' phút')
           ],
           body: [
             h('p', { class: 'small muted', style: { margin: 0, fontSize: '.78rem' } }, SUBTITLE[c]),
             h('div', { class: 'stats', style: { gridTemplateColumns: 'repeat(3, 1fr)', margin: 0 } },
               h('div', { class: 'stat', style: { padding: '8px 4px' } },
-                h('b', { style: { fontSize: '.95rem' } }, x + '/' + g),
-                h('span', { style: { fontSize: '.72rem' } }, 'XP hôm nay')
+                h('b', { style: { fontSize: '.95rem' } }, x + '/' + g + 'p'),
+                h('span', { style: { fontSize: '.72rem' } }, 'Thực học hôm nay')
               ),
               h('div', { class: 'stat', style: { padding: '8px 4px' } },
                 h('b', { style: { fontSize: '.95rem' } }, '🔥 ' + st + ' ngày'),
@@ -6525,12 +6525,12 @@ function homeView(opts = {}) {
           : h('span', { class: 'chip', style: { fontSize: '.72rem', marginRight: '6px' } }, '⚡ Duy trì'),
         h('span', { style: { fontWeight: 600 } }, xp >= g ? 'Đã đạt mục tiêu hôm nay' : 'Học hôm nay')
       ),
-      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút')
+      h('span', { class: 'muted', style: { fontWeight: 600 } }, xp + '/' + g + ' phút' + (xp === 0 && STUDY_SEC > 0 ? ' (' + STUDY_SEC + 's)' : ''))
     ),
     h('div', { class: 'bar', role: 'progressbar', 'aria-label': 'Mục tiêu hôm nay', 'aria-valuenow': xp, 'aria-valuemax': g }, gf),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, st), h('span', {}, 'ngày liên tục')),
-      h('div', { class: 'stat' }, h('b', {}, xp + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, xp > 0 ? (xp + 'p') : (STUDY_SEC > 0 ? (STUDY_SEC + 's') : '0p')), h('span', {}, 'thực học hôm nay')),
       h('div', { class: 'stat' }, h('b', {}, due), h('span', {}, 'từ cần ôn'))
     ),
     nx ? h('button', { class: 'primary block', onclick: () => lessonView(nx.t, nx.i) },
@@ -6793,7 +6793,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.06 · Section (HSK 1–9) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.07 · Section (HSK 1–9) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -12503,7 +12503,7 @@ function renderInlineTopicQuiz(t) {
       ),
       done ? h('div', { class: 'feedback ' + (isOk ? 'ok' : 'no'), style: { padding: '10px 12px', gap: '4px' } },
         h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-          h('strong', {}, isOk ? '✓ Chính xác! +2 XP' : '✗ Chưa đúng · Đáp án: ' + q.answer),
+          h('strong', {}, isOk ? '✓ Chính xác!' : '✗ Chưa đúng · Đáp án: ' + q.answer),
           h('button', {
             class: 'primary mini',
             onclick: () => { st.idx++; st.chosen = null; draw(); }
@@ -14222,6 +14222,7 @@ function lessonView(t, i, opts = null) {
   setFeedbackContext({ mode: 'lesson', topicId: t.id, topicTitle: t.sub || t.title, lessonIndex: i, lessonKind: t.lessons[i].kind, lessonTitle: lessonTitle(t, i) });
   const code = t.lang || S.lang || 'en', steps = catExam ? catExam.steps : buildSteps(t, i), first = new Map(), retried = new Set(), queue = steps.map((s, n) => Object.assign({}, s, { n }));
   let done = 0;
+  const lessonStartMs = Date.now();
   if (LANGS[code] && LANGS[code].cjk) loadStrokes(code);
   if (catExam) catExam.topics.slice(0, 6).forEach((subT) => preloadTopicAudio(code, subT));
   else preloadTopicAudio(code, t);
@@ -14573,7 +14574,7 @@ function lessonView(t, i, opts = null) {
         bestScore = Math.max(bestScore, score);
         if (score === bestScore) { bestAlign = a; lastSaid = said; }
         S.spoken[spokenKey] = Math.max(S.spoken[spokenKey] || 0, score);
-        addXp(score >= 70 ? XP_ITEM : 1, code);
+        addXp(0, code);
         checkAch();
         save();
 
@@ -14868,7 +14869,7 @@ function lessonView(t, i, opts = null) {
     mount(h('div', { class: 'panel stack center', style: { marginTop: '24px' } },
       h('p', { class: 'label' }, t.sub || t.title),
       h('h1', {}, correct === total ? 'Không sai câu nào!' : 'Xong bài rồi!'),
-      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), ' · +' + xp + ' XP' + (repeat && !catExam ? ' (học lại: nửa XP)' : '')),
+      h('p', {}, h('b', {}, correct + '/' + total + ' câu đúng (' + pct + '%)'), ' · ⏱️ ' + (() => { const s = Math.max(1, Math.round((Date.now() - lessonStartMs) / 1000)); return s >= 60 ? (Math.floor(s / 60) + ' phút' + (s % 60 ? ' ' + (s % 60) + ' giây' : '')) : (s + ' giây'); })()),
       passedCatExam && h('div', {
         class: 'feedback ok',
         style: { width: '100%', textAlign: 'center', margin: '4px 0' }
@@ -14897,7 +14898,7 @@ function lessonView(t, i, opts = null) {
         h('strong', {}, '💡 Đạt ' + pct + '% — Cần từ 80% trở lên để hoàn thành 100% cả chủ đề'),
         h('p', { class: 'small muted', style: { margin: '4px 0 0 0' } }, 'Bạn có thể làm lại bài Ôn tập cả chủ đề này hoặc học từng bài nhỏ bên dưới.')
       ),
-      h('p', {}, 'Hôm nay ' + LANGS[code].short + ': ' + xpOf(todayN(), code) + '/' + goal() + ' XP · chuỗi ' + streak(code) + ' ngày'),
+      h('p', {}, 'Thực học hôm nay: ' + (xpOf(todayN(), code) > 0 ? (xpOf(todayN(), code) + '/' + goal() + ' phút') : (STUDY_SEC > 0 ? (STUDY_SEC + ' giây / ' + goal() + ' phút') : ('0/' + goal() + ' phút'))) + ' · chuỗi ' + streak(code) + ' ngày'),
       catExam && !passedCatExam && h('button', { class: 'primary block', onclick: () => startCategoryExam(code, catExam.catObj, catExam.topics) }, '🔄 Thi lại vượt cấp chuyên đề'),
       nx && h('button', { class: (catExam && !passedCatExam ? '' : 'primary ') + 'block', onclick: () => lessonView(nx.t, nx.i) }, 'Học bài tiếp theo'),
       h('button', { class: 'block', onclick: () => go('home') }, 'Về trang Học'),
@@ -15928,7 +15929,7 @@ function speakOne(t, it, all) {
   const record = (score) => {
     S.spoken[k] = Math.max(S.spoken[k] || 0, score);
     srsRate(code + ':speak:' + plain(it.text), score >= 70);
-    addXp(score >= 70 ? XP_ITEM : 1, code);
+    addXp(0, code);
     checkAch();
   };
 
@@ -20036,7 +20037,7 @@ function createHskkSpeakingPractice(item, curData, targetText) {
     const score = a.score;
     currentBest = Math.max(currentBest, score);
     S.spoken[spokenKey] = currentBest;
-    addXp(score >= 70 ? XP_ITEM : 1, 'zh');
+    addXp(0, 'zh');
     checkAch();
     save();
 
@@ -22837,7 +22838,7 @@ function progressView() {
     ),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, streak(c0)), h('span', {}, 'chuỗi ngày · dài nhất ' + longest(c0))),
-      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) + '/' + goal() + 'p'), h('span', {}, 'phút hôm nay')),
+      h('div', { class: 'stat' }, h('b', {}, xpOf(t, c0) > 0 ? (xpOf(t, c0) + '/' + goal() + 'p') : (STUDY_SEC > 0 ? (STUDY_SEC + 's/' + goal() + 'p') : ('0/' + goal() + 'p'))), h('span', {}, 'thực học hôm nay')),
       h('div', { class: 'stat' }, h('b', {}, xpTotal(c0) + 'p'), h('span', {}, 'tổng thời gian học'))),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, Object.keys(S.lessons).filter((k) => k.startsWith(c0 + ':')).length), h('span', {}, 'bài đã học')),
