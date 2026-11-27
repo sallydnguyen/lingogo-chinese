@@ -1,5 +1,5 @@
 {
-  "version": "4.05",
-  "build": "20261127-0432",
-  "message": "Chỉ tính thời gian học khi thật sự vào bài học/luyện tập/thi, không tính giờ khi đứng ở Trang chủ"
+  "version": "4.06",
+  "build": "20261127-0440",
+  "message": "Sửa hàm h() hỗ trợ biến CSS (--sec-col, --unit-col, --duo-x) để hiện đúng 9 màu Section, viền Unit và đường cong S-path"
 }

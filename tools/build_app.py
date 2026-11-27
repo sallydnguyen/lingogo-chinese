@@ -1711,6 +1711,25 @@ def main() -> None:
     )
     html = re.sub(r"const APP_BUILD_ID = '[^']+';", f"const APP_BUILD_ID = '{build_id}';", html, count=1)
 
+    html = replace_exact(
+        html,
+        "    else if (k === 'style') {\n"
+        "      if (typeof v === 'string') el.style.cssText = v;\n"
+        "      else if (typeof v === 'object' && v) Object.assign(el.style, v);\n"
+        "    }",
+        "    else if (k === 'style') {\n"
+        "      if (typeof v === 'string') el.style.cssText = v;\n"
+        "      else if (typeof v === 'object' && v) {\n"
+        "        for (const [sk, sv] of Object.entries(v)) {\n"
+        "          if (sv == null || sv === false) continue;\n"
+        "          if (sk.startsWith('--')) el.style.setProperty(sk, String(sv));\n"
+        "          else el.style[sk] = sv;\n"
+        "        }\n"
+        "      }\n"
+        "    }",
+        label="h() CSS custom properties support",
+    )
+
     # 2. Single-language LANGS & path helpers
     langs_old = (
         "const LANGS = {\n"
