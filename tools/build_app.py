@@ -284,6 +284,7 @@ function normPinyinPlain(s) {
 }
 
 function dictView() {
+  ACTIVE_STUDY_MODE = true;
   setTabs(false);
   const d = DATA.zh;
   const qRaw = (DICT_Q || '').trim();
@@ -829,6 +830,7 @@ function openOnboardingModal(force = false) {
 }
 
 function practiceTabView() {
+  ACTIVE_STUDY_MODE = false;
   const groups = [
     {
       iconEl: '🎧',
@@ -904,6 +906,7 @@ function practiceTabView() {
 }
 
 function gamesTabView() {
+  ACTIVE_STUDY_MODE = true;
   const d = DATA.zh;
   const pool = [];
   if (d && d.topics) {
@@ -994,6 +997,7 @@ function gamesTabView() {
 
 
 NEW_HOME_VIEW = """function homeView(opts = {}) {
+  ACTIVE_STUDY_MODE = false;
   const _keepY = opts && opts.preserveScroll ? window.scrollY : null;
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
   const langCats = CATEGORIES[S.lang];
@@ -1845,11 +1849,24 @@ def main() -> None:
         "  if (!before && metGoal(t, code)) setTimeout(() => toast('Đạt mục tiêu ' + goal(code, t) + ' phút học ' + LANGS[code].short + ' hôm nay! 🎉'), 300);\n"
         "}\n"
         "const XP_ITEM = 0; // Tính tiến độ theo thời gian học (phút), không cộng XP theo từng từ\n"
+        "let ACTIVE_STUDY_MODE = false;\n"
+        "let STUDY_SEC = 0;\n"
+        "function isActivelyStudying() {\n"
+        "  if (typeof document === 'undefined' || document.visibilityState !== 'visible') return false;\n"
+        "  if (!S || !S.name) return false;\n"
+        "  if (document.getElementById('flashcard-overlay')) return true;\n"
+        "  return !!ACTIVE_STUDY_MODE;\n"
+        "}\n"
         "setInterval(() => {\n"
-        "  if (typeof document !== 'undefined' && document.visibilityState === 'visible' && S && S.name) {\n"
-        "    addXp(1, S.lang || 'zh');\n"
+        "  if (isActivelyStudying()) {\n"
+        "    STUDY_SEC += 5;\n"
+        "    if (STUDY_SEC >= 60) {\n"
+        "      const mins = Math.floor(STUDY_SEC / 60);\n"
+        "      STUDY_SEC -= mins * 60;\n"
+        "      addXp(mins, S.lang || 'zh');\n"
+        "    }\n"
         "  }\n"
-        "}, 60000);",
+        "}, 5000);",
         label="study minutes tracking",
     )
     html = replace_exact(
@@ -2304,7 +2321,7 @@ def main() -> None:
         label="knowledgeTabView back to practice",
     )
 
-    # 13. Handle Unit-level Test cleanly inside startHskLevelExam (don't overwrite HSK level attempt)
+    # 13. Handle Unit-level Test cleanly inside startHskLevelExam & ACTIVE_STUDY_MODE hooks
     html = replace_exact(
         html,
         "  const level = 'HSK ' + num;",
@@ -2325,6 +2342,42 @@ def main() -> None:
         "S.hsk_attempts[attemptKey] = currentAtt;",
         label="startHskLevelExam write attemptKey",
     )
+
+    # Active study timer hooks (count only when actively studying, never idle on home/menus)
+    html = replace_exact(html, "function go(k) {\n  stopSay();", "function go(k) {\n  ACTIVE_STUDY_MODE = false;\n  stopSay();", label="go reset study timer")
+    html = replace_exact(html, "function pickView() {\n  setTabs(false);", "function pickView() {\n  ACTIVE_STUDY_MODE = false;\n  setTabs(false);", label="pickView study false")
+    html = replace_exact(html, "function welcomeView() {\n  setTabs(false);", "function welcomeView() {\n  ACTIVE_STUDY_MODE = false;\n  setTabs(false);", label="welcomeView study false")
+    html = replace_exact(html, "function lessonView(t, i, opts = null) {\n  VIEW = 'lesson'; setTabs(false);", "function lessonView(t, i, opts = null) {\n  ACTIVE_STUDY_MODE = true;\n  VIEW = 'lesson'; setTabs(false);", label="lessonView study true")
+    html = replace_exact(html, "  const exit = () => { stopSay(); setFeedbackContext(null); go('home'); };", "  const exit = () => { ACTIVE_STUDY_MODE = false; stopSay(); setFeedbackContext(null); go('home'); };", label="lessonView exit study false")
+    html = replace_exact(html, "  function finish() {\n    const all = [...first.values()]", "  function finish() {\n    ACTIVE_STUDY_MODE = false;\n    const all = [...first.values()]", label="lessonView finish study false")
+    html = replace_exact(html, "function reviewView(forceExtra = false) {\n  const code = S.lang, t0 = todayN();", "function reviewView(forceExtra = false) {\n  ACTIVE_STUDY_MODE = false;\n  const code = S.lang, t0 = todayN();", label="reviewView entry study false")
+    html = replace_exact(html, "    const item = queue[0];\n    if (!item) {\n      checkAch();", "    const item = queue[0];\n    ACTIVE_STUDY_MODE = !!item;\n    if (!item) {\n      checkAch();", label="reviewView active queue flag")
+    html = replace_exact(html, "function skillsView(tab) {\n  stopSay();", "function skillsView(tab) {\n  ACTIVE_STUDY_MODE = true;\n  stopSay();", label="skillsView study true")
+    html = replace_exact(html, "function charView(code, c, list) {\n  const idx = list.indexOf(c)", "function charView(code, c, list) {\n  ACTIVE_STUDY_MODE = true;\n  const idx = list.indexOf(c)", label="charView study true")
+    html = replace_exact(html, "function grammarView(t, backTo) {\n  const code = t.lang", "function grammarView(t, backTo) {\n  ACTIVE_STUDY_MODE = true;\n  const code = t.lang", label="grammarView study true")
+    html = replace_exact(html, "function grammarQuizView(levelKey, onlyWrong, customOpts) {\n  const code = S.lang", "function grammarQuizView(levelKey, onlyWrong, customOpts) {\n  ACTIVE_STUDY_MODE = true;\n  const code = S.lang", label="grammarQuizView study true")
+    html = replace_exact(html, "function knowledgeTabView() {\n  const code = S.lang;", "function knowledgeTabView() {\n  ACTIVE_STUDY_MODE = true;\n  const code = S.lang;", label="knowledgeTabView study true")
+    html = replace_exact(html, "function examTabView() {\n  const code = S.lang;", "function examTabView() {\n  ACTIVE_STUDY_MODE = false;\n  const code = S.lang;", label="examTabView menu study false")
+    html = replace_exact(
+        html,
+        "  let paused = false;\n\n  const exit = () => {\n    stopExamLiveTimer();",
+        "  let paused = false;\n  ACTIVE_STUDY_MODE = true;\n\n  const exit = () => {\n    ACTIVE_STUDY_MODE = false;\n    stopExamLiveTimer();",
+        label="startHskLevelExam start/exit study flag",
+    )
+    html = replace_exact(
+        html,
+        "      onclick: () => {\n        paused = !paused;\n        const el = document.getElementById('hsk_timer_txt');",
+        "      onclick: () => {\n        paused = !paused;\n        ACTIVE_STUDY_MODE = !submitted && !paused;\n        const el = document.getElementById('hsk_timer_txt');",
+        label="startHskLevelExam pause study flag",
+    )
+    html = replace_exact(
+        html,
+        "      submitted = true;\n      renderExamPage();",
+        "      submitted = true;\n      ACTIVE_STUDY_MODE = false;\n      renderExamPage();",
+        count=2,
+        label="exam submit study false",
+    )
+    html = replace_exact(html, "function progressView() {\n  const t = todayN()", "function progressView() {\n  ACTIVE_STUDY_MODE = false;\n  const t = todayN()", label="progressView study false")
 
     # 14. Branding copy, ACH, feedback title, Progress tab (study minutes + onboarding)
     html = replace_exact(html, "tab Học của Lingogo", "tab Học của Lingogo Chinese", label="knowledge tip 1")

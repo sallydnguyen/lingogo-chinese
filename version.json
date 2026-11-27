@@ -1,5 +1,5 @@
 {
-  "version": "4.04",
-  "build": "20261127-0428",
-  "message": "Phân biệt 9 màu riêng biệt cho 9 Section HSK 1–9"
+  "version": "4.05",
+  "build": "20261127-0432",
+  "message": "Chỉ tính thời gian học khi thật sự vào bài học/luyện tập/thi, không tính giờ khi đứng ở Trang chủ"
 }

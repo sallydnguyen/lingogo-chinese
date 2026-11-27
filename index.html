@@ -1463,7 +1463,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0428';
+const APP_BUILD_ID = '20261127-0432';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -2052,11 +2052,24 @@ function addXp(n, code = S.lang) {
   if (!before && metGoal(t, code)) setTimeout(() => toast('Đạt mục tiêu ' + goal(code, t) + ' phút học ' + LANGS[code].short + ' hôm nay! 🎉'), 300);
 }
 const XP_ITEM = 0; // Tính tiến độ theo thời gian học (phút), không cộng XP theo từng từ
+let ACTIVE_STUDY_MODE = false;
+let STUDY_SEC = 0;
+function isActivelyStudying() {
+  if (typeof document === 'undefined' || document.visibilityState !== 'visible') return false;
+  if (!S || !S.name) return false;
+  if (document.getElementById('flashcard-overlay')) return true;
+  return !!ACTIVE_STUDY_MODE;
+}
 setInterval(() => {
-  if (typeof document !== 'undefined' && document.visibilityState === 'visible' && S && S.name) {
-    addXp(1, S.lang || 'zh');
+  if (isActivelyStudying()) {
+    STUDY_SEC += 5;
+    if (STUDY_SEC >= 60) {
+      const mins = Math.floor(STUDY_SEC / 60);
+      STUDY_SEC -= mins * 60;
+      addXp(mins, S.lang || 'zh');
+    }
   }
-}, 60000);
+}, 5000);
 
 // ===== Ôn tập ngắt quãng FSRS (Free Spaced Repetition Scheduler: Stability st + Difficulty d + Box b 0–6) =====
 const IV = [1, 1, 3, 7, 14, 30, 60];
@@ -3514,6 +3527,7 @@ function setTabs(show) {
   }));
 }
 function go(k) {
+  ACTIVE_STUDY_MODE = false;
   stopSay();
   if (k === 'skills') {
     VIEW = 'skills';
@@ -4923,6 +4937,7 @@ function langFlagSvg(code) {
 }
 
 function pickView() {
+  ACTIVE_STUDY_MODE = false;
   setTabs(false);
   const t = todayN();
   const sch = getDaySchedule(t);
@@ -5015,6 +5030,7 @@ function pickView() {
 
 // ===== Màn hình chào =====
 function welcomeView() {
+  ACTIVE_STUDY_MODE = false;
   setTabs(false);
   const name = h('input', { type: 'text', id: 'name', placeholder: 'Ví dụ: Sally', maxlength: '30', autocomplete: 'given-name' });
   let goal = Math.max(20, S.goal || 20), lang = S.lang || 'en';
@@ -5617,6 +5633,7 @@ function normPinyinPlain(s) {
 }
 
 function dictView() {
+  ACTIVE_STUDY_MODE = true;
   setTabs(false);
   const d = DATA.zh;
   const qRaw = (DICT_Q || '').trim();
@@ -6162,6 +6179,7 @@ function openOnboardingModal(force = false) {
 }
 
 function practiceTabView() {
+  ACTIVE_STUDY_MODE = false;
   const groups = [
     {
       iconEl: '🎧',
@@ -6237,6 +6255,7 @@ function practiceTabView() {
 }
 
 function gamesTabView() {
+  ACTIVE_STUDY_MODE = true;
   const d = DATA.zh;
   const pool = [];
   if (d && d.topics) {
@@ -6325,6 +6344,7 @@ function gamesTabView() {
 }
 
 function homeView(opts = {}) {
+  ACTIVE_STUDY_MODE = false;
   const _keepY = opts && opts.preserveScroll ? window.scrollY : null;
   const d = DATA[S.lang], st = streak(), xp = xpOf(todayN(), S.lang), due = dueIn(S.lang);
   const langCats = CATEGORIES[S.lang];
@@ -6767,7 +6787,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.04 · Section (HSK 1–9) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.05 · Section (HSK 1–9) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -14190,6 +14210,7 @@ function startCategoryExam(code, catObj, topics) {
 }
 
 function lessonView(t, i, opts = null) {
+  ACTIVE_STUDY_MODE = true;
   VIEW = 'lesson'; setTabs(false);
   const catExam = opts && opts.catExam;
   setFeedbackContext({ mode: 'lesson', topicId: t.id, topicTitle: t.sub || t.title, lessonIndex: i, lessonKind: t.lessons[i].kind, lessonTitle: lessonTitle(t, i) });
@@ -14199,7 +14220,7 @@ function lessonView(t, i, opts = null) {
   if (catExam) catExam.topics.slice(0, 6).forEach((subT) => preloadTopicAudio(code, subT));
   else preloadTopicAudio(code, t);
   if (t.gram && t.gram.length && DATA[code] && DATA[code].grammar) preloadGrammarAudio(code, t.gram.map((gid) => DATA[code].grammar[gid]).filter(Boolean));
-  const exit = () => { stopSay(); setFeedbackContext(null); go('home'); };
+  const exit = () => { ACTIVE_STUDY_MODE = false; stopSay(); setFeedbackContext(null); go('home'); };
 
   function step() {
     stopSay();
@@ -14761,6 +14782,7 @@ function lessonView(t, i, opts = null) {
   }
 
   function finish() {
+    ACTIVE_STUDY_MODE = false;
     const all = [...first.values()], graded = all.filter((r) => !r.self);
     const correct = graded.filter((r) => r.correct).length, total = graded.length;
     const pct = total ? Math.round(correct / total * 100) : 100;
@@ -15160,6 +15182,7 @@ function startTopicFlashcard(t, customWords, fromView, lessonIdx) {
 let REVIEW_SKILL = 'vocab'; // Ôn tập ngắt quãng chỉ ôn từ mới theo yêu cầu
 
 function reviewView(forceExtra = false) {
+  ACTIVE_STUDY_MODE = false;
   const code = S.lang, t0 = todayN();
   ensureSrsItems(code);
   REVIEW_SKILL = 'vocab';
@@ -15268,6 +15291,7 @@ function reviewView(forceExtra = false) {
     stopSay();
     window.scrollTo(0, 0);
     const item = queue[0];
+    ACTIVE_STUDY_MODE = !!item;
     if (!item) {
       checkAch();
       const afterDone = getReviewedToday(code, t0);
@@ -16615,6 +16639,7 @@ function renderReadSkillsRich(code, d, onRefresh = () => skillsView('read')) {
 }
 
 function skillsView(tab) {
+  ACTIVE_STUDY_MODE = true;
   stopSay();
   if (tab) SKILL_TAB = tab;
   VIEW = 'skills';
@@ -16715,6 +16740,7 @@ function guideColor() {
   return '#' + a.map((x, i) => Math.round(x * 0.28 + b[i] * 0.72).toString(16).padStart(2, '0')).join('');
 }
 function charView(code, c, list) {
+  ACTIVE_STUDY_MODE = true;
   const idx = list.indexOf(c), box = h('div', { class: 'charbox' });
   const status = h('p', { class: 'center small muted', 'aria-live': 'polite' }, 'Đang tải nét chữ…');
   const strokeBadge = h('span', { class: 'chip good', style: { marginLeft: '8px', fontSize: '.85rem', verticalAlign: 'middle' }, hidden: true });
@@ -16973,6 +16999,7 @@ function fillBlock(t) {
 
 // ===== Ngữ pháp và kanji =====
 function grammarView(t, backTo) {
+  ACTIVE_STUDY_MODE = true;
   const code = t.lang, d = DATA[code], langAttr = LANGS[code].lang;
   const back = h('div', { class: 'topbar' }, h('button', { class: 'ghost', onclick: () => go(backTo || 'home') }, backTo === 'grammar' ? '← Về tab Ngữ pháp' : '← Về trang Học'), h('span', { class: 'grow' }), feedbackBtn({ mode: 'grammar', topicId: t.id, topicTitle: t.sub || t.title }));
   const topicGids = t.gram || [];
@@ -17923,6 +17950,7 @@ function gqBuild(levelKey, onlyWrong, code = S.lang) {
   return qs;
 }
 function grammarQuizView(levelKey, onlyWrong, customOpts) {
+  ACTIVE_STUDY_MODE = true;
   const code = S.lang, langAttr = LANGS[code].lang;
   const qs = customOpts && customOpts.qs ? customOpts.qs : gqBuild(levelKey, onlyWrong, code);
   preloadTextsAudio(code, qs.map((q) => q && q.e && q.e[0]).filter(Boolean));
@@ -18631,6 +18659,7 @@ function renderEnglishKnowledgeView() {
 }
 
 function knowledgeTabView() {
+  ACTIVE_STUDY_MODE = true;
   const code = S.lang;
   if (code === 'en') {
     return renderEnglishKnowledgeView();
@@ -20601,6 +20630,7 @@ function renderHskkExamView() {
 
 
 function examTabView() {
+  ACTIVE_STUDY_MODE = false;
   const code = S.lang;
   if (code === 'en') {
     return ieltsTabView();
@@ -21245,6 +21275,7 @@ async function startJlptLevelExam(lv, opts = {}) {
       checkAch();
       save();
       submitted = true;
+      ACTIVE_STUDY_MODE = false;
       renderExamPage();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (passed) toast('🏆 Chúc mừng! Đạt ' + pct + '% — Vượt cấp JLPT ' + level + ' thành công!');
@@ -21569,8 +21600,10 @@ async function startHskLevelExam(lvNum, opts = {}) {
   let totalSec = (exam.timeMin || 25) * 60;
   let remSec = totalSec;
   let paused = false;
+  ACTIVE_STUDY_MODE = true;
 
   const exit = () => {
+    ACTIVE_STUDY_MODE = false;
     stopExamLiveTimer();
     stopSay();
     setTabs(true);
@@ -21627,6 +21660,7 @@ async function startHskLevelExam(lvNum, opts = {}) {
       style: { cursor: 'pointer', fontWeight: 700, fontVariantNumeric: 'tabular-nums', border: '1px solid var(--line)' },
       onclick: () => {
         paused = !paused;
+        ACTIVE_STUDY_MODE = !submitted && !paused;
         const el = document.getElementById('hsk_timer_txt');
         if (el) el.textContent = (paused ? '⏸ ' : '⏱ ') + formatExamSec(remSec);
       }
@@ -21944,6 +21978,7 @@ async function startHskLevelExam(lvNum, opts = {}) {
       checkAch();
       save();
       submitted = true;
+      ACTIVE_STUDY_MODE = false;
       renderExamPage();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (passed) toast('🏆 Chúc mừng! Đạt ' + pct + '% — Vượt cấp ' + level + ' thành công!');
@@ -22756,6 +22791,7 @@ function themeSettingPanel() {
     h('p', { class: 'small muted', style: { margin: 0 } }, '“Theo máy” tự đổi Sáng/Tối theo cài đặt của điện thoại hoặc máy tính.'));
 }
 function progressView() {
+  ACTIVE_STUDY_MODE = false;
   const t = todayN(), days = Array.from({ length: 7 }, (_, i) => t - 6 + i);
   const xd = (d) => xpOf(d, S.lang);
   const max = Math.max(goal(), ...days.map(xd));
