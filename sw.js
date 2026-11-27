@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lingogo-chinese-offline-v4';
+const CACHE_NAME = 'lingogo-chinese-offline-v5';
 const CORE_ASSETS = [
   './',
   './index.html',

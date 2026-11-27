@@ -1463,7 +1463,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0425';
+const APP_BUILD_ID = '20261127-0428';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -6618,12 +6618,15 @@ function homeView(opts = {}) {
     };
 
     const secThemes = [
-      { col: '#58cc02', soft: 'rgba(88, 204, 2, .16)', border: 'rgba(88, 204, 2, .45)', lip: '#46a302', glow: 'rgba(88, 204, 2, .24)' },
-      { col: '#1cb0f6', soft: 'rgba(28, 176, 246, .14)', border: 'rgba(28, 176, 246, .4)', lip: '#148ec9', glow: 'rgba(28, 176, 246, .22)' },
-      { col: '#a855f7', soft: 'rgba(168, 85, 247, .14)', border: 'rgba(168, 85, 247, .4)', lip: '#7e22ce', glow: 'rgba(168, 85, 247, .22)' },
-      { col: '#f97316', soft: 'rgba(249, 115, 22, .14)', border: 'rgba(249, 115, 22, .4)', lip: '#c2410c', glow: 'rgba(249, 115, 22, .22)' },
-      { col: '#0d9488', soft: 'rgba(13, 148, 136, .14)', border: 'rgba(13, 148, 136, .4)', lip: '#0f766e', glow: 'rgba(13, 148, 136, .22)' },
-      { col: '#d97706', soft: 'rgba(217, 119, 6, .15)', border: 'rgba(217, 119, 6, .42)', lip: '#9a4604', glow: 'rgba(217, 119, 6, .22)' }
+      { col: '#58cc02', soft: 'rgba(88, 204, 2, .16)', border: 'rgba(88, 204, 2, .45)', lip: '#46a302', glow: 'rgba(88, 204, 2, .24)' },     // S1 HSK 1: Xanh lá
+      { col: '#1cb0f6', soft: 'rgba(28, 176, 246, .14)', border: 'rgba(28, 176, 246, .4)', lip: '#148ec9', glow: 'rgba(28, 176, 246, .22)' }, // S2 HSK 2: Xanh dương
+      { col: '#8b5cf6', soft: 'rgba(139, 92, 246, .14)', border: 'rgba(139, 92, 246, .4)', lip: '#6d28d9', glow: 'rgba(139, 92, 246, .22)' }, // S3 HSK 3: Tím
+      { col: '#f97316', soft: 'rgba(249, 115, 22, .14)', border: 'rgba(249, 115, 22, .4)', lip: '#c2410c', glow: 'rgba(249, 115, 22, .22)' }, // S4 HSK 4: Cam
+      { col: '#0d9488', soft: 'rgba(13, 148, 136, .14)', border: 'rgba(13, 148, 136, .4)', lip: '#0f766e', glow: 'rgba(13, 148, 136, .22)' }, // S5 HSK 5: Xanh ngọc
+      { col: '#e11d48', soft: 'rgba(225, 29, 72, .14)', border: 'rgba(225, 29, 72, .4)', lip: '#be123c', glow: 'rgba(225, 29, 72, .22)' },     // S6 HSK 6: Đỏ ruby
+      { col: '#4f46e5', soft: 'rgba(79, 70, 229, .14)', border: 'rgba(79, 70, 229, .4)', lip: '#3730a3', glow: 'rgba(79, 70, 229, .22)' },     // S7 HSK 7: Chàm Indigo
+      { col: '#db2777', soft: 'rgba(219, 39, 119, .14)', border: 'rgba(219, 39, 119, .4)', lip: '#9d174d', glow: 'rgba(219, 39, 119, .22)' }, // S8 HSK 8: Hồng đậm
+      { col: '#d97706', soft: 'rgba(217, 119, 6, .15)', border: 'rgba(217, 119, 6, .42)', lip: '#9a4604', glow: 'rgba(217, 119, 6, .22)' }    // S9 HSK 9: Vàng hổ phách
     ];
 
     const makeSecHdr = (sec, secHasNx, { interactive = true } = {}) => {
@@ -6764,7 +6767,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.03 · Section (HSK 1–9) & Unit')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.04 · Section (HSK 1–9) & Unit')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
