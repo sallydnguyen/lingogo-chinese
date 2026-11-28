@@ -1,5 +1,5 @@
 {
-  "version": "4.12",
-  "build": "20261127-2130",
-  "message": "Hoàn thiện dịch đa ngôn ngữ (VI / EN / 中文 / 日本語) cho toàn bộ Section, Unit, tiêu đề bài, Luyện tập, Luyện thi, Lộ trình & Tiến độ"
+  "version": "4.13",
+  "build": "20261127-2220",
+  "message": "Sửa lỗi hội thoại nhiều giọng nhân vật, thêm nút loa đọc câu ví dụ & bỏ từ 'Bạn nói...' trong câu trắc nghiệm"
 }

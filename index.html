@@ -1481,7 +1481,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-2130';
+const APP_BUILD_ID = '20261127-2220';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -2387,14 +2387,14 @@ function loadBundle(file) {
 function preloadTopicAudio(code, t) {
   if (!t || !DATA[code] || !DATA[code].audio) return;
   const seen = new Set();
-  const enqueue = (txt) => {
+  const enqueue = (txt, voice) => {
     const clean = plain(txt);
     if (!clean) return;
-    const b = bundleOf(code, clean);
+    const b = bundleOf(code, clean, voice);
     if (b && !seen.has(b.file)) { seen.add(b.file); loadBundle(b.file); }
   };
   (t.vocab || []).forEach((v) => { enqueue(v.w); if (v.ex) enqueue(v.ex); });
-  (t.speak || []).forEach((sc) => (sc.lines || []).forEach((ln) => enqueue(ln.t || ln.text)));
+  (t.speak || []).forEach((sc) => (sc.lines || []).forEach((ln, idx) => enqueue(ln.t || ln.text, dialogueSpeakerVoice(sc.lines, ln, idx))));
   (t.sents || []).forEach((s) => {
     const tx = s && s.chunks ? s.chunks.join('') : (s && (s.text || s.w || s.t));
     if (tx) enqueue(tx);
@@ -2439,21 +2439,27 @@ function preloadGrammarAudio(code, pts) {
   });
   preloadTextsAudio(code, texts);
 }
-function bundleOf(code, text) {
-  const d = DATA[code]; if (!d || !d.audio || !text) return null;
+function bundleOf(code, text, voice) {
+  const d = DATA[code]; if (!d || !text) return null;
+  if (voice && d.dlgAudio) {
+    const dk = voice + '|' + text;
+    const da = d.dlgAudio[dk];
+    if (da != null) return { file: langPath(code, 'audio/' + code + '-' + da + '.json'), key: dk };
+  }
+  if (!d.audio) return null;
   const a = d.audio[text]; if (a == null) return null;
   return code === 'en' ? { file: langPath(code, 'audio/w' + a[0] + '.json'), key: a[1] } : { file: langPath(code, 'audio/' + code + '-' + a + '.json'), key: text };
 }
-function clipForSync(code, text) {
-  const b = bundleOf(code, text); if (!b) return { status: 'none', src: null, b: null };
+function clipForSync(code, text, voice) {
+  const b = bundleOf(code, text, voice); if (!b) return { status: 'none', src: null, b: null };
   if (b.file in BUNDLE_CACHE) {
     const m = BUNDLE_CACHE[b.file];
     return { status: 'hit', src: m && m[b.key] ? 'data:audio/mpeg;base64,' + m[b.key] : null, b };
   }
   return { status: 'pending', src: null, b };
 }
-async function clipFor(code, text) {
-  const res = clipForSync(code, text);
+async function clipFor(code, text, voice) {
+  const res = clipForSync(code, text, voice);
   if (res.status === 'none' || res.status === 'hit') return res.src;
   const m = await loadBundle(res.b.file);
   return m && m[res.b.key] ? 'data:audio/mpeg;base64,' + m[res.b.key] : null;
@@ -2486,7 +2492,7 @@ function pickVoice(code, targetLang) {
   }
   return best;
 }
-function speakUtterance(code, text, slow, useVoice = true, retried = false) {
+function speakUtterance(code, text, slow, useVoice = true, retried = false, voiceTag = '') {
   if (!('speechSynthesis' in window)) {
     toast('Thiết bị này chưa hỗ trợ đọc to.');
     finishSayDone(false);
@@ -2507,6 +2513,9 @@ function speakUtterance(code, text, slow, useVoice = true, retried = false) {
     }
   }
   u.rate = slow ? 0.6 : code === 'en' ? 0.92 : 0.85;
+  if (voiceTag) {
+    u.pitch = voiceTag === 'm1' ? 0.88 : voiceTag === 'm2' ? 0.80 : voiceTag === 'f1' ? 1.12 : voiceTag === 'f2' ? 1.22 : 1.0;
+  }
   ACTIVE_UTT = u;
 
   let started = false;
@@ -2519,7 +2528,7 @@ function speakUtterance(code, text, slow, useVoice = true, retried = false) {
     if (ACTIVE_UTT === u) ACTIVE_UTT = null;
     const err = ev && ev.error;
     if (!retried && useVoice && err !== 'canceled' && err !== 'interrupted' && seq === SAY_SEQ) {
-      speakUtterance(code, text, slow, false, true);
+      speakUtterance(code, text, slow, false, true, voiceTag);
     } else if (seq === SAY_SEQ) {
       finishSayDone(false);
     }
@@ -2539,7 +2548,7 @@ function speakUtterance(code, text, slow, useVoice = true, retried = false) {
     if (!retried && useVoice) {
       TTS_TIMER = setTimeout(() => {
         if (!started && seq === SAY_SEQ && !speechSynthesis.speaking && !speechSynthesis.pending) {
-          speakUtterance(code, text, slow, false, true);
+          speakUtterance(code, text, slow, false, true, voiceTag);
         }
       }, 650);
     }
@@ -2551,8 +2560,8 @@ function speakUtterance(code, text, slow, useVoice = true, retried = false) {
     runSpeak();
   }
 }
-function tts(code, text, slow) {
-  speakUtterance(code, text, slow, true, false);
+function tts(code, text, slow, voiceTag = '') {
+  speakUtterance(code, text, slow, true, false, voiceTag);
 }
 function playAudSrc(src, slow, onFail, seq) {
   AUD.onended = null;
@@ -2591,7 +2600,7 @@ function playAudSrc(src, slow, onFail, seq) {
     handleFail();
   }
 }
-function say(code, text, slow, onDone) {
+function say(code, text, slow, onDone, voiceTag = '') {
   if (!text) { if (onDone) onDone(false); return; }
   text = plain(text);
   if (!text) { if (onDone) onDone(false); return; }
@@ -2601,18 +2610,18 @@ function say(code, text, slow, onDone) {
   finishSayDone(false);
   if (onDone) ACTIVE_SAY_DONE = onDone;
 
-  const clip = clipForSync(code, text);
+  const clip = clipForSync(code, text, voiceTag);
   if (clip.status === 'hit') {
     if (clip.src) {
       if ('speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
-      playAudSrc(clip.src, slow, () => tts(code, text, slow), mySeq);
+      playAudSrc(clip.src, slow, () => tts(code, text, slow, voiceTag), mySeq);
       return;
     }
-    tts(code, text, slow);
+    tts(code, text, slow, voiceTag);
     return;
   }
   if (clip.status === 'none') {
-    tts(code, text, slow);
+    tts(code, text, slow, voiceTag);
     return;
   }
 
@@ -2622,16 +2631,16 @@ function say(code, text, slow, onDone) {
     const src = m && m[clip.b.key] ? 'data:audio/mpeg;base64,' + m[clip.b.key] : null;
     if (src) {
       if ('speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
-      playAudSrc(src, slow, () => tts(code, text, slow), mySeq);
+      playAudSrc(src, slow, () => tts(code, text, slow, voiceTag), mySeq);
     } else {
-      tts(code, text, slow);
+      tts(code, text, slow, voiceTag);
     }
   }).catch(() => {
-    if (mySeq === SAY_SEQ) tts(code, text, slow);
+    if (mySeq === SAY_SEQ) tts(code, text, slow, voiceTag);
   });
 }
-function sayWait(code, text, slow) {
-  return new Promise((resolve) => say(code, text, slow, resolve));
+function sayWait(code, text, slow, voiceTag = '') {
+  return new Promise((resolve) => say(code, text, slow, resolve, voiceTag));
 }
 function sayAfter(code, text, ms = 300) {
   if (!text) return;
@@ -3678,6 +3687,7 @@ function playAudio(src, slow = false) {
 function spk(code, text, opts = {}) {
   const slow = !!opts.slow;
   const src = opts.src;
+  const voice = opts.voice || '';
   return h('button', {
     class: 'spk' + (opts.cls ? ' ' + opts.cls : ''),
     'aria-label': slow ? 'Nghe chậm' : (src ? 'Nghe giọng người thật' : 'Nghe'),
@@ -3686,10 +3696,10 @@ function spk(code, text, opts = {}) {
       e.stopPropagation();
       if (src) {
         const snapSeq = SAY_SEQ + 1;
-        playAudio(src, slow).then((ok) => { if (!ok && SAY_SEQ === snapSeq) say(code, text, slow); });
+        playAudio(src, slow).then((ok) => { if (!ok && SAY_SEQ === snapSeq) say(code, text, slow, null, voice); });
         return;
       }
-      say(code, text, slow);
+      say(code, text, slow, null, voice);
     }
   }, slow ? h('span', { class: 'turtle', 'aria-hidden': 'true' }, '🐢') : icon(ICON.speaker));
 }
@@ -7012,7 +7022,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.12 · Hoàn thiện dịch đa ngôn ngữ UI')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.13 · Hội thoại đa nhân vật & đọc câu ví dụ')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
@@ -13994,6 +14004,26 @@ function resolveQuizDialogue(t, q) {
   return null;
 }
 
+const DLG_VOICES = ['m1', 'f1', 'f2', 'm2'];
+function dialogueSpeakerVoice(lines, ln, idx) {
+  if (ln && ln.v) return ln.v;
+  const s = ln && ln.s ? String(ln.s).trim() : '';
+  if (!s) return DLG_VOICES[(idx || 0) % 2];
+  const order = [];
+  (lines || []).forEach((item) => {
+    const sp = item && item.s ? String(item.s).trim() : '';
+    if (sp && order.indexOf(sp) === -1) order.push(sp);
+  });
+  const spIdx = order.indexOf(s);
+  return DLG_VOICES[(spIdx >= 0 ? spIdx : (idx || 0)) % DLG_VOICES.length];
+}
+function dialogueSpeakerStyle(voice) {
+  if (voice === 'f1') return { color: '#be185d', bg: 'rgba(190,24,93,.10)' };
+  if (voice === 'f2') return { color: '#7c3aed', bg: 'rgba(124,58,237,.10)' };
+  if (voice === 'm2') return { color: '#b45309', bg: 'rgba(180,83,9,.10)' };
+  return { color: 'var(--teal)', bg: 'rgba(13,148,136,.10)' };
+}
+
 async function playLinesSeq(code, lines, btn, rowEls = []) {
   if (btn.dataset.playing === '1') {
     btn.dataset.playing = '0';
@@ -14003,13 +14033,18 @@ async function playLinesSeq(code, lines, btn, rowEls = []) {
     btn.textContent = uiTr('🔊 Nghe cả đoạn');
     return;
   }
-  const playable = (lines || []).map((ln, idx) => ({ ln, idx, txt: (ln && (ln.t || ln.text)) || '' })).filter((x) => x.txt);
+  const playable = (lines || []).map((ln, idx) => ({
+    ln,
+    idx,
+    txt: (ln && (ln.t || ln.text)) || '',
+    voice: dialogueSpeakerVoice(lines, ln, idx)
+  })).filter((x) => x.txt);
   if (!playable.length) return;
 
-  if (clipForSync(code, playable[0].txt).status !== 'hit') unlockIosAudio();
+  if (clipForSync(code, plain(playable[0].txt), playable[0].voice).status !== 'hit') unlockIosAudio();
   const seenBundles = new Set();
-  playable.forEach(({ txt }) => {
-    const b = bundleOf(code, plain(txt));
+  playable.forEach(({ txt, voice }) => {
+    const b = bundleOf(code, plain(txt), voice);
     if (b && !seenBundles.has(b.file)) { seenBundles.add(b.file); loadBundle(b.file); }
   });
 
@@ -14019,12 +14054,12 @@ async function playLinesSeq(code, lines, btn, rowEls = []) {
   const clearHi = () => rowEls.forEach((r) => { if (r) r.style.background = ''; });
   try {
     for (let k = 0; k < playable.length; k++) {
-      const { txt, idx } = playable[k];
+      const { txt, idx, voice } = playable[k];
       if (btn.isConnected === false || btn.dataset.seq !== mySeq || btn.dataset.playing !== '1') break;
       clearHi();
       if (rowEls[idx]) rowEls[idx].style.background = 'rgba(45,212,191,.10)';
       btn.textContent = uiTr('⏹️ Dừng (' + (k + 1) + '/' + playable.length + ')');
-      const ok = await sayWait(code, txt, false);
+      const ok = await sayWait(code, txt, false, voice);
       if (!ok || btn.isConnected === false || btn.dataset.seq !== mySeq || btn.dataset.playing !== '1') break;
     }
   } finally {
@@ -14041,8 +14076,10 @@ function renderDialogueCard(code, title, src, lines, opts = {}) {
   let showVi = !!opts.defaultShowVi;
   const pyNodes = [], viNodes = [], rowEls = [];
   const pyLabel = code === 'ja' ? 'Hiragana' : (code === 'en' ? 'Phiên âm' : 'Pinyin');
-  const rows = (lines || []).map((ln) => {
+  const rows = (lines || []).map((ln, idx) => {
     const lnTxt = ln.t || ln.text || '';
+    const lnVoice = dialogueSpeakerVoice(lines, ln, idx);
+    const spStyle = dialogueSpeakerStyle(lnVoice);
     const pyEl = ln.r ? h('p', { class: 'small read', style: { margin: '2px 0 0 0', textAlign: 'left', color: 'var(--teal)', display: showPy ? 'block' : 'none' } }, ln.r) : null;
     const viEl = ln.m ? h('p', { class: 'small muted', style: { margin: '2px 0 0 0', textAlign: 'left', display: showVi ? 'block' : 'none' } }, ln.m) : null;
     if (pyEl) pyNodes.push(pyEl);
@@ -14050,13 +14087,13 @@ function renderDialogueCard(code, title, src, lines, opts = {}) {
     const rowEl = h('div', { style: { padding: '6px 4px', borderRadius: '8px', borderBottom: '1px dashed rgba(148,163,184,.18)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' } },
       h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
         h('div', { style: { display: 'flex', gap: '6px', alignItems: 'baseline', flexWrap: 'wrap' } },
-          ln.s ? h('span', { class: 'small', style: { fontWeight: 700, color: 'var(--teal)', flexShrink: 0 } }, ln.s + ':') : null,
+          ln.s ? h('span', { class: 'small', style: { fontWeight: 700, color: spStyle.color, background: spStyle.bg, padding: '1px 7px', borderRadius: '999px', flexShrink: 0 } }, ln.s) : null,
           h('span', { lang: LANGS[code].lang, style: { fontSize: opts.compact ? '1.05rem' : '1.14rem', fontWeight: 600, lineHeight: 1.45 } }, lnTxt)
         ),
         pyEl,
         viEl
       ),
-      lnTxt ? spk(code, lnTxt) : null
+      lnTxt ? spk(code, lnTxt, { voice: lnVoice }) : null
     );
     rowEls.push(rowEl);
     return rowEl;
@@ -14982,14 +15019,24 @@ function lessonView(t, i, opts = null) {
         ex.type === 'quiz' ? quizFeedback(code, ex, r) : null,
         ex.type === 'listen_dlg' ? listenDlgFeedback(code, ex, r) : null,
         ex.type === 'gquiz' ? grammarQuizFeedback(code, ex, r) : null,
-        (['listen', 'reverse'].includes(ex.type) || (!r.correct && ex.type === 'meaning')) && ex.v ? h('div', { class: 'stack', style: { gap: '4px', marginTop: '4px' } },
-          ex.v.m ? h('p', { lang: LANGS[code].lang, style: { margin: 0, fontWeight: 600 } }, plain(ex.v.w) + ' — ' + ex.v.m) : null,
-          (ex.v.r && ex.v.r !== plain(ex.v.w)) ? h('p', { class: code === 'en' ? 'ipa' : 'read', lang: code === 'ja' ? 'ja' : null, style: { margin: 0, color: 'var(--teal)', fontWeight: 600, textAlign: 'left' } }, ex.v.r) : null,
-          ex.v.ex ? h('p', { class: 'small', style: { margin: '2px 0 0 0' } },
-            h('span', { lang: LANGS[code].lang }, plain(ex.v.ex)),
-            ex.v.exm ? h('span', { class: 'muted' }, ' — ' + ex.v.exm) : null
-          ) : null,
-          h('div', { class: 'listen', style: { justifyContent: 'flex-start' } }, listenBtns(code, ex.v.w))
+        (['listen', 'reverse', 'meaning'].includes(ex.type)) && ex.v ? h('div', { class: 'stack', style: { gap: '4px', marginTop: '4px' } },
+          h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px' } },
+            h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
+              ex.v.m ? h('p', { lang: LANGS[code].lang, style: { margin: 0, fontWeight: 600 } }, plain(ex.v.w) + ' — ' + ex.v.m) : null,
+              (ex.v.r && ex.v.r !== plain(ex.v.w)) ? h('p', { class: code === 'en' ? 'ipa' : 'read', lang: code === 'ja' ? 'ja' : null, style: { margin: 0, color: 'var(--teal)', fontWeight: 600, textAlign: 'left' } }, ex.v.r) : null
+            ),
+            listenBtns(code, ex.v.w)
+          ),
+          ex.v.ex ? h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px', marginTop: '2px' } },
+            h('div', { class: 'stack', style: { gap: '2px', flex: 1, minWidth: 0 } },
+              h('p', { class: 'small', style: { margin: 0 } },
+                h('span', { lang: LANGS[code].lang }, plain(ex.v.ex)),
+                ex.v.exm ? h('span', { class: 'muted' }, ' — ' + ex.v.exm) : null
+              ),
+              ex.v.exr ? h('p', { class: code === 'en' ? 'ipa' : 'read', lang: code === 'ja' ? 'ja' : null, style: { margin: 0, fontSize: '.82rem', color: 'var(--teal)', textAlign: 'left' } }, ex.v.exr) : null
+            ),
+            listenBtns(code, ex.v.ex)
+          ) : null
         ) : null,
         ex.v && ['meaning', 'listen', 'reverse'].includes(ex.type) && code !== 'en' ? h('div', { style: { marginTop: '8px' } }, hvBlock(code, ex.v, { compact: true })) : null
       ),
