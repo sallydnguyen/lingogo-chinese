@@ -2511,6 +2511,18 @@ def main() -> None:
     )
     html = replace_exact(
         html,
+        "https://github.com/sallydnguyen/lingogo/issues/new",
+        "https://github.com/sallydnguyen/lingogo-chinese/issues/new",
+        label="github issue url",
+    )
+    html = replace_exact(
+        html,
+        "https://api.github.com/repos/sallydnguyen/lingogo/issues",
+        "https://api.github.com/repos/sallydnguyen/lingogo-chinese/issues",
+        label="github issue api url",
+    )
+    html = replace_exact(
+        html,
         "  const goalSel = h('select', { id: 'goal', onchange: (e) => { S.goal = Number(e.target.value); save(); toast('Đã lưu mục tiêu.'); } },\n"
         "    [[20, 'Tối thiểu · 20 XP cơ bản (Focus: 40 XP / Duy trì: 10 XP)'], [30, 'Vừa phải · 30 XP cơ bản (Focus: 60 XP / Duy trì: 15 XP)'], [50, 'Nghiêm túc · 50 XP cơ bản (Focus: 100 XP / Duy trì: 25 XP)']].map(([v, l]) => h('option', { value: v, selected: (S.goal || 20) === v }, l)));\n"
         "  const smartSchedCheck = h('input', { type: 'checkbox', id: 'smartSched', checked: S.smartSchedule !== false, onchange: (e) => { S.smartSchedule = e.target.checked; save(); toast('Đã cập nhật chế độ lộ trình.'); progressView(); } });\n"
