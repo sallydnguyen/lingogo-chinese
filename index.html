@@ -23,6 +23,15 @@
     return pref;
   };
   applyTheme();
+  (function () {
+    try {
+      var u = localStorage.getItem('lingogo-ui-lang') || 'vi';
+      var map = { vi: 'vi', en: 'en', zh: 'zh-Hans', ja: 'ja' };
+      if (!map[u]) u = 'vi';
+      document.documentElement.dataset.uiLang = u;
+      document.documentElement.lang = map[u];
+    } catch (e) {}
+  })();
   if (mq) {
     var onChange = function () { if (document.documentElement.dataset.themePref === 'auto') applyTheme(); };
     if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
@@ -635,6 +644,15 @@ span.spk { width: 34px; height: 34px; min-height: 34px; }
 .c30-turn { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--surface); }
 .c30-turn.done { border-color: rgba(35,120,74,.4); background: rgba(35,120,74,.04); }
 .c30-timer { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .88rem; padding: 3px 10px; border-radius: 999px; background: rgba(180,83,9,.12); color: var(--amber); }
+
+
+/* Nút & Modal chuyển ngôn ngữ giao diện (vi / en / zh / ja) */
+.ui-lang-btn { display: inline-flex; align-items: center; justify-content: center; gap: 3px; height: 34px; min-height: 34px; padding: 0 9px; border-radius: 99px; color: var(--teal); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: .78rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; transition: background .15s, border-color .15s, transform .2s ease; }
+.ui-lang-btn:hover { background: var(--sunk); border-color: var(--teal); }
+.ui-lang-btn:active { transform: scale(.94); }
+.ui-lang-opt { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font-size: .95rem; font-weight: 600; text-align: left; transition: border-color .15s, background .15s; }
+.ui-lang-opt:hover { border-color: var(--teal); }
+.ui-lang-opt.active { border-color: var(--teal); background: rgba(15,82,87,.10); color: var(--teal); }
 
 /* Flashcard */
 /* Lật thẻ 3D: luôn chạy (kể cả khi máy bật Giảm chuyển động) vì đây là phản hồi chính khi chạm thẻ */
@@ -1463,7 +1481,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-0452';
+const APP_BUILD_ID = '20261127-1655';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -1664,7 +1682,7 @@ function renderMiniWeekChart(code, t) {
   const xd = (d) => xpOf(d, code);
   const g = goal(code, t);
   const max = Math.max(g, ...days.map(xd), 10);
-  const wd = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const wd = uiWeekdays();
 
   return h('div', { class: 'mini-week-box' },
     h('div', { class: 'row between', style: { marginBottom: '3px', fontSize: '.74rem', color: 'var(--muted)' } },
@@ -3269,8 +3287,195 @@ const dueIn = (code, d = todayN()) => {
 };
 
 // ===== Tiện ích giao diện =====
+
+// ===== ĐA NGÔN NGỮ GIAO DIỆN (VI / EN / ZH / JA) =====
+const UI_LANG_KEY = 'lingogo-ui-lang';
+const UI_LANGS = {
+  vi: { flag: '🇻🇳', short: 'VI', name: 'Tiếng Việt', html: 'vi' },
+  en: { flag: '🇬🇧', short: 'EN', name: 'English', html: 'en' },
+  zh: { flag: '🇨🇳', short: '中文', name: '中文 (简体)', html: 'zh-Hans' },
+  ja: { flag: '🇯🇵', short: '日本語', name: '日本語', html: 'ja' }
+};
+const UI_EXACT = {"Trang chủ":{"en":"Home","zh":"首页","ja":"ホーム"},"Học":{"en":"Learn","zh":"学习","ja":"学習"},"Từ vựng":{"en":"Vocabulary","zh":"词汇","ja":"語彙"},"Luyện tập":{"en":"Practice","zh":"练习","ja":"練習"},"Luyện thi":{"en":"Exams","zh":"考试","ja":"試験"},"Luyện IELTS":{"en":"IELTS Prep","zh":"雅思备考","ja":"IELTS対策"},"Luyện HSKK":{"en":"HSKK Prep","zh":"HSKK备考","ja":"HSKK対策"},"Luyện JLPT":{"en":"JLPT Prep","zh":"JLPT备考","ja":"JLPT対策"},"Kiến thức":{"en":"Knowledge","zh":"知识","ja":"知識"},"Tiến độ":{"en":"Progress","zh":"进度","ja":"進捗"},"Kỹ năng":{"en":"Skills","zh":"技能","ja":"スキル"},"Ngôn ngữ hiển thị":{"en":"Display Language","zh":"界面语言","ja":"表示言語"},"Chọn ngôn ngữ hiển thị":{"en":"Choose display language","zh":"选择界面语言","ja":"表示言語を選択"},"🌐 Ngôn ngữ hiển thị":{"en":"🌐 Display Language","zh":"🌐 界面语言","ja":"🌐 表示言語"},"Chọn ngôn ngữ giao diện cho ứng dụng (độc lập với ngôn ngữ đang học).":{"en":"Choose the app interface language (independent from your study language).","zh":"选择应用界面显示语言（与正在学习的语言相互独立）。","ja":"アプリの画面表示言語を選択します（学習中の言語とは独立しています）。"},"Giao diện":{"en":"Appearance","zh":"外观主题","ja":"外観テーマ"},"Chọn giao diện":{"en":"Choose theme","zh":"选择主题","ja":"テーマを選択"},"Sáng":{"en":"Light","zh":"浅色","ja":"ライト"},"Tối":{"en":"Dark","zh":"深色","ja":"ダーク"},"Theo máy":{"en":"System","zh":"跟随系统","ja":"端末に合わせる"},"“Theo máy” tự đổi Sáng/Tối theo cài đặt của điện thoại hoặc máy tính.":{"en":"“System” automatically matches your phone or computer dark mode setting.","zh":"“跟随系统”将根据手机或电脑的深浅模式自动切换。","ja":"「端末に合わせる」はスマホやPCの設定に合わせて自動で切り替わります。"},"🗺️ Lộ trình":{"en":"🗺️ Roadmap","zh":"🗺️ 学习路线","ja":"🗺️ ロードマップ"},"Xem lộ trình học & tiến độ":{"en":"View learning roadmap & progress","zh":"查看学习路线与进度","ja":"学習ロードマップと進捗を見る"},"Đóng":{"en":"Close","zh":"关闭","ja":"閉じる"},"Thoát":{"en":"Exit","zh":"退出","ja":"終了"},"Quay lại":{"en":"Back","zh":"返回","ja":"戻る"},"← Trang chủ":{"en":"← Home","zh":"← 首页","ja":"← ホーム"},"← Về trang Học":{"en":"← Back to Learn","zh":"← 返回学习","ja":"← 学習へ戻る"},"← Về tab Ngữ pháp":{"en":"← Back to Grammar","zh":"← 返回语法","ja":"← 文法へ戻る"},"← Luyện tập":{"en":"← Practice","zh":"← 练习","ja":"← 練習"},"← Từ vựng":{"en":"← Vocabulary","zh":"← 词汇","ja":"← 語彙"},"← Quay lại":{"en":"← Back","zh":"← 返回","ja":"← 戻る"},"← Thoát phòng thi":{"en":"← Exit Exam","zh":"← 退出考场","ja":"← 試験を終了"},"Về trang Học":{"en":"Back to Learn","zh":"返回学习","ja":"学習へ戻る"},"Về Trang chủ":{"en":"Back to Home","zh":"返回首页","ja":"ホームへ戻る"},"Học để nói được, mỗi ngày một chút":{"en":"Learn to speak, a little every day","zh":"开口说外语，每天进步一点","ja":"話せるようになる、毎日少しずつ"},"Học Tiếng Anh giao tiếp & công việc đa ngành từ A1 đến C2: bài học theo chủ đề, nghe hội thoại thực tế, luyện nói, viết email và đề IELTS 4 kỹ năng.":{"en":"Learn everyday & workplace English from A1 to C2: topic lessons, real dialogues, speaking practice, business emails & 4-skill IELTS prep.","zh":"从A1到C2学习日常与职场英语：主题课程、真实对话、口语练习、商务邮件与雅思四科备考。","ja":"A1からC2まで日常・ビジネス英語を学習：テーマ別レッスン、実践会話、スピーキング、メール作成、IELTS 4技能対策。"},"Ba thứ tiếng trong một app: bài học theo chủ đề, ôn tập đúng lúc, luyện nói và tập viết chữ Hán, kana.":{"en":"Topic-based lessons, smart spaced repetition, speaking practice, and character writing.","zh":"主题课程、智能间隔复习、口语练习与汉字/假名书写训练。","ja":"テーマ別レッスン、スマート反復復習、スピーキング、漢字・かな書き取り練習。"},"Đã có tiến độ cũ của bạn. Bạn sẽ học tiếp từ chỗ đã dừng.":{"en":"Your existing progress was found. You will continue right where you left off.","zh":"已检测到你的学习进度，将从上次停下的地方继续。","ja":"前回の学習データが見つかりました。続きから再開します。"},"Đã học trên máy khác?":{"en":"Studied on another device?","zh":"在其他设备学过？","ja":"他の端末で学習しましたか？"},"Tự động đồng bộ bài học qua GitHub":{"en":"Auto-sync lessons via GitHub","zh":"通过 GitHub 自动同步进度","ja":"GitHubで学習データを自動同期"},"Đồng bộ ngay":{"en":"Sync now","zh":"立即同步","ja":"今すぐ同期"},"Tên của bạn":{"en":"Your name","zh":"你的名字","ja":"お名前"},"Ví dụ: Sally":{"en":"e.g. Sally","zh":"例如：Sally","ja":"例：Sally"},"Mục tiêu mỗi ngày":{"en":"Daily goal","zh":"每日目标","ja":"1日の目標"},"Mục tiêu mỗi ngày, cho từng thứ tiếng":{"en":"Daily goal per language","zh":"每种语言的每日目标","ja":"言語ごとの1日の目標"},"Bạn muốn học thứ tiếng nào trước?":{"en":"Which language would you like first?","zh":"想先学习哪种语言？","ja":"最初にどの言語を学びますか？"},"Có thể đổi sang thứ tiếng khác bất cứ lúc nào.":{"en":"You can switch anytime.","zh":"随时可以切换。","ja":"いつでも切り替えられます。"},"Tối thiểu":{"en":"Light","zh":"轻松","ja":"ライト"},"Vừa phải":{"en":"Moderate","zh":"适中","ja":"標準"},"Nghiêm túc":{"en":"Intensive","zh":"专注","ja":"集中"},"20 XP ≈ 4 từ mới mỗi ngày":{"en":"20 XP ≈ 4 new words/day","zh":"20 XP ≈ 每天4个新词","ja":"20 XP ≈ 毎日4語"},"30 XP mỗi ngày":{"en":"30 XP / day","zh":"每天 30 XP","ja":"1日 30 XP"},"50 XP mỗi ngày":{"en":"50 XP / day","zh":"每天 50 XP","ja":"1日 50 XP"},"20 XP ≈ 4 từ mới mỗi thứ tiếng":{"en":"20 XP ≈ 4 new words","zh":"20 XP ≈ 4个新词","ja":"20 XP ≈ 4語"},"30 XP mỗi thứ tiếng":{"en":"30 XP / day","zh":"每天 30 XP","ja":"1日 30 XP"},"50 XP mỗi thứ tiếng":{"en":"50 XP / day","zh":"每天 50 XP","ja":"1日 50 XP"},"Bắt đầu học Tiếng Anh":{"en":"Start Learning English","zh":"开始学习英语","ja":"英語の学習を始める"},"Bắt đầu học Trung":{"en":"Start Learning Chinese","zh":"开始学习中文","ja":"中国語の学習を始める"},"Bắt đầu học Nhật":{"en":"Start Learning Japanese","zh":"开始学习日本語","ja":"日本語の学習を始める"},"Bắt đầu học":{"en":"Start Learning","zh":"开始学习","ja":"学習を始める"},"Tiếng Anh":{"en":"English","zh":"英语","ja":"英語"},"Tiếng Trung":{"en":"Chinese","zh":"中文","ja":"中国語"},"Tiếng Nhật":{"en":"Japanese","zh":"日语","ja":"日本語"},"Học hôm nay":{"en":"Today's study","zh":"今日学习","ja":"今日の学習"},"Mục tiêu hôm nay":{"en":"Today's goal","zh":"今日目标","ja":"今日の目標"},"Đã đạt mục tiêu hôm nay":{"en":"Daily goal reached","zh":"已完成今日目标","ja":"今日の目標を達成"},"ngày liên tục":{"en":"day streak","zh":"连续天数","ja":"連続日数"},"ngày đạt mục tiêu":{"en":"goal days","zh":"达标天数","ja":"目標達成日"},"phút hôm nay":{"en":"min today","zh":"今日分钟","ja":"今日の分"},"XP hôm nay":{"en":"XP today","zh":"今日XP","ja":"今日のXP"},"từ cần ôn":{"en":"words due","zh":"待复习词","ja":"復習待ち"},"từ ôn hôm nay":{"en":"due today","zh":"今日待复习","ja":"今日の復習"},"🎯 Trọng tâm":{"en":"🎯 Focus","zh":"🎯 重点","ja":"🎯 重点"},"⚡ Duy trì":{"en":"⚡ Maintain","zh":"⚡ 保持","ja":"⚡ 維持"},"🧘 Chủ Nhật":{"en":"🧘 Sunday","zh":"🧘 周日","ja":"🧘 日曜"},"🔄 Ôn tập":{"en":"🔄 Review","zh":"🔄 复习","ja":"🔄 復習"},"🔄 Ôn tập từ mới (Chưa có từ đến hạn hôm nay)":{"en":"🔄 Review vocabulary (No words due today)","zh":"🔄 复习词汇（今日暂无到期单词）","ja":"🔄 語彙を復習（今日の復習予定なし）"},"Xem lộ trình →":{"en":"Roadmap →","zh":"查看路线 →","ja":"ロードマップ →"},"📖 Mở tất cả":{"en":"📖 Expand all","zh":"📖 全部展开","ja":"📖 すべて開く"},"📁 Thu gọn tất cả":{"en":"📁 Collapse all","zh":"📁 全部收起","ja":"📁 すべて閉じる"},"📁 Thu gọn":{"en":"📁 Collapse","zh":"📁 收起","ja":"📁 閉じる"},"📖 Mở tất cả phần":{"en":"📖 Expand all parts","zh":"📖 展开全部","ja":"📖 すべて開く"},"Học tiếp":{"en":"Continue","zh":"继续学习","ja":"続ける"},"Học ngay":{"en":"Study now","zh":"立即学习","ja":"今すぐ学習"},"Làm bài":{"en":"Start","zh":"开始练习","ja":"始める"},"Tiếp theo":{"en":"Next","zh":"下一步","ja":"次へ"},"Tiếp tục":{"en":"Continue","zh":"继续","ja":"続ける"},"Kiểm tra":{"en":"Check","zh":"检查","ja":"確認"},"Tiếp theo ➔":{"en":"Next ➔","zh":"下一题 ➔","ja":"次へ ➔"},"Đã xong":{"en":"Done","zh":"已完成","ja":"完了"},"✓ Đã xong":{"en":"✓ Done","zh":"✓ 已完成","ja":"✓ 完了"},"Chưa học":{"en":"Not started","zh":"未学习","ja":"未学習"},"Hoàn thành":{"en":"Completed","zh":"已完成","ja":"完了"},"Đang tải bài học…":{"en":"Loading lessons…","zh":"正在加载课程…","ja":"レッスンを読み込み中…"},"Thử lại":{"en":"Retry","zh":"重试","ja":"再試行"},"Có lỗi khi tải.":{"en":"Failed to load.","zh":"加载失败。","ja":"読み込みに失敗しました。"},"Tất cả":{"en":"All","zh":"全部","ja":"すべて"},"Tất cả các chủ đề":{"en":"All Topics","zh":"全部主题","ja":"すべてのトピック"},"Khởi động & Cơ bản":{"en":"Starter & Basics","zh":"入门与基础","ja":"入門・基礎"},"Sơ cấp 1":{"en":"Elementary 1","zh":"初级 1","ja":"初級 1"},"Sơ cấp 2":{"en":"Elementary 2","zh":"初级 2","ja":"初級 2"},"Sơ cấp 3":{"en":"Elementary 3","zh":"初级 3","ja":"初級 3"},"Đời sống & Giao tiếp":{"en":"Daily Life & Communication","zh":"生活与交际","ja":"生活・コミュニケーション"},"Trung cấp 1":{"en":"Intermediate 1","zh":"中级 1","ja":"中級 1"},"Trung cấp 2":{"en":"Intermediate 2","zh":"中级 2","ja":"中級 2"},"Trung cấp 3":{"en":"Intermediate 3","zh":"中级 3","ja":"中級 3"},"Trung cấp 1 · Đời sống xã hội":{"en":"Intermediate 1 · Society & Life","zh":"中级 1 · 社会生活","ja":"中級 1 · 社会生活"},"Trung cấp 2 · Công việc & Ngành nghề":{"en":"Intermediate 2 · Work & Industries","zh":"中级 2 · 职场与行业","ja":"中級 2 · ビジネス・業界"},"Cao cấp 1":{"en":"Advanced 1","zh":"高级 1","ja":"上級 1"},"Cao cấp 2":{"en":"Advanced 2","zh":"高级 2","ja":"上級 2"},"Cao cấp 3":{"en":"Advanced 3","zh":"高级 3","ja":"上級 3"},"Cao cấp 1 · Học thuật & Điều hành":{"en":"Advanced 1 · Academic & Executive","zh":"高级 1 · 学术与管理","ja":"上級 1 · 学術・経営"},"Cao cấp 2 · Chuyên sâu & Văn học":{"en":"Advanced 2 · Mastery & Literature","zh":"高级 2 · 精通与文学","ja":"上級 2 · 専門・文学"},"N5 · Sơ cấp 1":{"en":"N5 · Elementary 1","zh":"N5 · 初级 1","ja":"N5 · 初級 1"},"N4 · Sơ cấp 2":{"en":"N4 · Elementary 2","zh":"N4 · 初级 2","ja":"N4 · 初級 2"},"N3 · Giao tiếp công sở":{"en":"N3 · Workplace Communication","zh":"N3 · 职场交际","ja":"N3 · ビジネス会話"},"N2 · Đàm phán thương mại":{"en":"N2 · Business Negotiation","zh":"N2 · 商务谈判","ja":"N2 · 商談・敬語"},"N1 · Kinh tế & Xã hội":{"en":"N1 · Economy & Society","zh":"N1 · 经济与社会","ja":"N1 · 経済・社会"},"✨ Xác định trình độ & mục tiêu học":{"en":"✨ Level & Goal Assessment","zh":"✨ 水平测试与学习目标","ja":"✨ レベル診断・目標設定"},"Bước 1/3 · Mục tiêu của bạn":{"en":"Step 1/3 · Your Goal","zh":"第 1/3 步 · 学习目标","ja":"ステップ 1/3 · 目標設定"},"Bước 2/3 · Kiểm tra nhanh trình độ":{"en":"Step 2/3 · Quick Level Check","zh":"第 2/3 步 · 快速水平测试","ja":"ステップ 2/3 · クイック診断"},"Bước 3/3 · Lộ trình gợi ý cho bạn":{"en":"Step 3/3 · Recommended Plan","zh":"第 3/3 步 · 推荐学习方案","ja":"ステップ 3/3 · おすすめプラン"},"Bỏ qua khảo sát":{"en":"Skip assessment","zh":"跳过测试","ja":"診断をスキップ"},"Làm khảo sát nhanh →":{"en":"Take quick test →","zh":"开始快速测试 →","ja":"テストを始める →"},"Làm lại khảo sát":{"en":"Retake survey","zh":"重新测试","ja":"診断をやり直す"},"Bắt đầu khảo sát →":{"en":"Start survey →","zh":"开始调查 →","ja":"診断を開始 →"},"🎯 Làm lại khảo sát trình độ & mục tiêu":{"en":"🎯 Retake level & goal survey","zh":"🎯 重新进行水平与目标测试","ja":"🎯 レベル診断・目標設定をやり直す"},"Giao tiếp cấp tốc":{"en":"30-Day Crash Speaking","zh":"30天速成口语","ja":"30日会話マスター"},"Phản xạ nói nhanh trong 30 ngày":{"en":"Fast speaking reflexes in 30 days","zh":"30天快速口语反应","ja":"30日間でスピーキング瞬発力を強化"},"Công việc":{"en":"Workplace English","zh":"职场英语","ja":"ビジネス英語"},"Email, họp hành, giao tiếp công sở":{"en":"Emails, meetings & office talk","zh":"邮件、会议与职场沟通","ja":"メール・会議・社内コミュニケーション"},"Nâng band điểm Nghe · Nói · Đọc · Viết":{"en":"Boost Listening · Speaking · Reading · Writing","zh":"提升听说读写分数","ja":"4技能のスコアアップ"},"Học từ nền tảng":{"en":"Build Foundations","zh":"打好基础","ja":"基礎から学ぶ"},"Xây gốc từ vựng & ngữ pháp vững chắc":{"en":"Strong foundation in vocabulary & grammar","zh":"扎实的词汇与语法基础","ja":"語彙と文法の基礎固め"},"👆 Chạm để lật thẻ & xem đáp án":{"en":"👆 Tap to flip & reveal answer","zh":"👆 点击翻卡查看答案","ja":"👆 タップして裏返す"},"🃏 Chạm để lật thẻ xem nghĩa & ví dụ":{"en":"🃏 Tap to flip for meaning & example","zh":"🃏 点击翻卡查看释义与例句","ja":"🃏 タップして意味と例文を見る"},"Từ tiếp theo ➔ (Tự động chấm theo thời gian)":{"en":"Next card ➔ (Auto FSRS rating)","zh":"下一张 ➔（按耗时自动评分）","ja":"次のカード ➔（時間連動FSRS評価）"},"🃏 Lật thẻ Flashcard (Tự chấm FSRS)":{"en":"🃏 Flashcard Flip (Auto FSRS)","zh":"🃏 闪卡翻转（自动 FSRS）","ja":"🃏 フラッシュカード（自動FSRS）"},"🃏 Flashcard FSRS":{"en":"🃏 Flashcard FSRS","zh":"🃏 FSRS 闪卡","ja":"🃏 FSRS カード"},"🔄 Lật lại bộ thẻ này":{"en":"🔄 Flip this deck again","zh":"🔄 再翻一遍这组卡片","ja":"🔄 もう一度めくる"},"🃏 Thẻ từ mới · Chạm lật thẻ & bấm Tiếp tục (FSRS tự chấm theo thời gian)":{"en":"🃏 New word card · Tap to flip & tap Continue (Auto FSRS)","zh":"🃏 新词卡片 · 点击翻面后点继续（FSRS 自动评分）","ja":"🃏 新出単語カード · タップで裏返し「続ける」（自動FSRS）"},"Nhớ nghĩa & cách đọc, chạm lật thẻ rồi chạm tiếp để qua từ khác":{"en":"Recall meaning & pronunciation, tap to flip, then tap again for next","zh":"回忆词义和读音，点击翻面，再点进入下一词","ja":"意味と発音を思い出してタップで裏返し、もう一度タップで次へ"},"Nhớ âm Hán Việt & cách đọc, chạm lật thẻ rồi chạm tiếp để qua từ khác":{"en":"Recall meaning & reading, tap to flip, then tap again for next","zh":"回忆读音和词义，点击翻面，再点进入下一词","ja":"読み方と意味を思い出してタップで裏返し、もう一度タップで次へ"},"Nhớ nghĩa, chạm để lật thẻ":{"en":"Recall meaning, tap to flip","zh":"回忆释义，点击翻卡","ja":"意味を思い出してタップ"},"Nhớ âm Hán Việt, chạm để lật thẻ":{"en":"Recall reading, tap to flip","zh":"回忆读音，点击翻卡","ja":"読みを思い出してタップ"},"Ôn tập FSRS":{"en":"FSRS Review","zh":"FSRS 复习","ja":"FSRS 復習"},"Ôn tập thông minh FSRS":{"en":"Smart FSRS Review","zh":"FSRS 智能复习","ja":"スマートFSRS復習"},"Thuật toán FSRS tự tính Độ ổn định (S) & Độ khó (D) của từng từ: thẻ khó quay lại sớm, thẻ nhớ chắc được giãn xa hơn.":{"en":"FSRS tracks Stability (S) & Difficulty (D): hard cards return sooner, well-known ones space out further.","zh":"FSRS 算法自动计算稳定度(S)与难度(D)：难词早回访，熟词间隔拉长。","ja":"FSRSが安定度(S)と難易度(D)を算出し、難しい単語は早めに、覚えた単語は間隔を空けて復習します。"},"Hệ thống tự lọc 10–15 từ dễ quên nhất mỗi ngày, số từ còn lại tự bảo lưu sang hôm sau.":{"en":"Selects the 10–15 most forgettable words each day; remaining cards roll over to tomorrow.","zh":"每天智能筛选10–15个最易遗忘的词，其余自动顺延至明天。","ja":"忘れやすい10〜15語を毎日自動抽出し、残りは翌日に繰り越します。"},"🎉 Đã ôn sạch kho từ đến hạn!":{"en":"🎉 All due cards reviewed!","zh":"🎉 今日到期词汇已全部复习！","ja":"🎉 今日の復習をすべて完了！"},"📚 Học bài mới →":{"en":"📚 Study new lesson →","zh":"📚 学习新课 →","ja":"📚 新しいレッスンへ →"},"Xóa tiến độ bài này":{"en":"Reset lesson progress","zh":"重置本课进度","ja":"このレッスンの進捗をリセット"},"Không sai câu nào!":{"en":"Perfect score!","zh":"全部答对！","ja":"全問正解！"},"Xong bài rồi!":{"en":"Lesson complete!","zh":"本课完成！","ja":"レッスン完了！"},"Chính xác!":{"en":"Correct!","zh":"回答正确！","ja":"正解！"},"Chưa đúng":{"en":"Incorrect","zh":"不太对","ja":"不正解"},"Chưa đúng.":{"en":"Incorrect.","zh":"不太对。","ja":"不正解です。"},"Tốt lắm!":{"en":"Great job!","zh":"太棒了！","ja":"よくできました！"},"Làm lại câu chưa đúng":{"en":"Retry missed question","zh":"重做错题","ja":"間違えた問題をやり直す"},"Phím 1–4 để chọn · Enter để kiểm tra / tiếp tục":{"en":"Keys 1–4 to select · Enter to check / continue","zh":"按 1–4 选择 · Enter 检查 / 继续","ja":"数字1–4で選択 · Enterで確認 / 次へ"},"📚 Từ vựng · Chọn nghĩa đúng":{"en":"📚 Vocabulary · Choose meaning","zh":"📚 词汇 · 选择正确释义","ja":"📚 語彙 · 正しい意味を選択"},"📚 Từ vựng · Phản xạ từ có nghĩa này":{"en":"📚 Vocabulary · Pick word for meaning","zh":"📚 词汇 · 根据释义选词","ja":"📚 語彙 · 意味に合う語を選択"},"🎧 Kỹ năng Nghe · Nghe và chọn từ bạn nghe thấy":{"en":"🎧 Listening · Listen & pick the word","zh":"🎧 听力 · 听音选词","ja":"🎧 リスニング · 聞いて単語を選択"},"📖 Đọc hiểu hội thoại · Chọn đáp án đúng":{"en":"📖 Dialogue Reading · Choose answer","zh":"📖 对话阅读 · 选择正确答案","ja":"📖 会話読解 · 正しい答えを選択"},"📖 Kỹ năng Đọc hiểu · Tình huống thực tế":{"en":"📖 Reading · Real-life scenario","zh":"📖 阅读理解 · 真实情景","ja":"📖 読解 · 実践シチュエーション"},"Chữ này đọc Hán Việt là gì?":{"en":"What is the Sino reading?","zh":"这个字的读音/汉越音是什么？","ja":"この漢字の音は何ですか？"},"Kanji này đọc Hán Việt là gì?":{"en":"What is this Kanji's reading?","zh":"这个日文汉字怎么读？","ja":"この漢字の読み方は？"},"Hoặc gõ cả câu vào đây":{"en":"Or type the full sentence here","zh":"或在此输入完整句子","ja":"または文全体を入力"},"Gõ cả câu":{"en":"Type full sentence","zh":"输入整句","ja":"全文を入力"},"Chủ đề bài học":{"en":"Lesson Topic","zh":"课程主题","ja":"レッスントピック"},"Từ vựng · Ôn FSRS":{"en":"Vocabulary · FSRS Review","zh":"词汇 · FSRS 复习","ja":"語彙 · FSRS復習"},"🎧 Nghe từ mẫu":{"en":"🎧 Listen to word","zh":"🎧 听例词发音","ja":"🎧 単語を聞く"},"🔊 Nghe":{"en":"🔊 Listen","zh":"🔊 听音频","ja":"🔊 聞く"},"🔊 Nghe audio":{"en":"🔊 Play audio","zh":"🔊 播放音频","ja":"🔊 音声再生"},"🔊 Nghe câu hỏi":{"en":"🔊 Play question","zh":"🔊 听问题音频","ja":"🔊 問題を聞く"},"🔊 Nghe cả đoạn":{"en":"🔊 Play all","zh":"🔊 连播整段","ja":"🔊 全文再生"},"🔊 Nghe phát âm":{"en":"🔊 Pronounce","zh":"🔊 听发音","ja":"🔊 発音を聞く"},"👁️ Hiện nghĩa":{"en":"👁️ Show meaning","zh":"👁️ 显示释义","ja":"👁️ 意味を表示"},"🙈 Ẩn nghĩa":{"en":"🙈 Hide meaning","zh":"🙈 隐藏释义","ja":"🙈 意味を隠す"},"👁️ Xem đáp án":{"en":"👁️ Show answer","zh":"👁️ 查看答案","ja":"👁️ 答えを見る"},"Từ điển Cambridge Offline (Tiếng Anh)":{"en":"Cambridge Offline Dictionary (English)","zh":"剑桥离线词典（英语）","ja":"ケンブリッジ オフライン辞書（英語）"},"Từ điển dò từ tiếng Anh":{"en":"English Quick Dictionary","zh":"英语快速查词典","ja":"英語クイック辞書"},"📘 Cambridge Offline":{"en":"📘 Cambridge Offline","zh":"📘 剑桥离线词典","ja":"📘 Cambridge オフライン"},"⚡ Đang Offline · Sẵn sàng":{"en":"⚡ Offline · Ready","zh":"⚡ 离线可用","ja":"⚡ オフライン利用可能"},"🔍 Tra từ giao tiếp (Anh hoặc Việt)...":{"en":"🔍 Search word or meaning...","zh":"🔍 搜索英语单词或释义...","ja":"🔍 単語や意味を検索..."},"🔍 Nhập từ tiếng Anh hoặc nghĩa tiếng Việt...":{"en":"🔍 Search word or meaning...","zh":"🔍 输入单词或释义...","ja":"🔍 単語や意味を入力..."},"Bài học":{"en":"Lessons","zh":"课程词","ja":"レッスン"},"30 ngày":{"en":"30-Day","zh":"30天速成","ja":"30日"},"Mẫu câu 30 ngày":{"en":"30-Day Phrases","zh":"30天句型","ja":"30日フレーズ"},"Không tìm thấy trong kho offline.":{"en":"No match in offline dictionary.","zh":"离线词库中未找到匹配项。","ja":"オフライン辞書に見つかりませんでした。"},"⚡ Đang ngoại tuyến: bạn vẫn tra từ điển Cambridge Offline và nghe phát âm bình thường.":{"en":"⚡ Offline mode: Cambridge Offline Dictionary and audio pronunciation remain available.","zh":"⚡ 当前离线：仍可正常使用剑桥离线词典和发音功能。","ja":"⚡ オフライン中：ケンブリッジ辞書と音声機能は引き続き利用できます。"},"Giao tiếp cấp tốc 30 ngày":{"en":"30-Day Crash Communication","zh":"30天速成口语交际","ja":"30日スピード英会話"},"Nghe chép & Nói đuổi":{"en":"Dictation & Shadowing","zh":"听写与影子跟读","ja":"ディクテーション & シャドーイング"},"Đọc báo & Trò chơi":{"en":"News & Games","zh":"双语阅读与游戏","ja":"ニュース & ゲーム"},"Đọc báo Song ngữ (Reading Discussion)":{"en":"Bilingual News Reading","zh":"双语新闻阅读","ja":"バイリンガルニュース読解"},"📰 Đọc báo Song ngữ (Reading Discussion)":{"en":"📰 Bilingual News Reading","zh":"📰 双语新闻阅读","ja":"📰 バイリンガルニュース"},"Trò chơi · Ghép cặp Từ – Nghĩa":{"en":"Word Matching Game","zh":"词义配对游戏","ja":"単語マッチングゲーム"},"🎮 Trò chơi · Ghép cặp Từ – Nghĩa":{"en":"🎮 Word Matching Game","zh":"🎮 词义配对游戏","ja":"🎮 単語マッチングゲーム"},"Chơi lại":{"en":"Play again","zh":"再玩一次","ja":"やり直す"},"Chơi ván mới":{"en":"New round","zh":"新一局","ja":"新しいゲーム"},"Tuyệt vời! Bạn đã ghép đúng toàn bộ!":{"en":"Awesome! You matched all pairs!","zh":"太棒了！全部配对成功！","ja":"素晴らしい！すべて揃いました！"},"💬 Hội thoại":{"en":"💬 Dialogue","zh":"💬 对话","ja":"💬 会話"},"📌 Mẫu câu":{"en":"📌 Key Phrases","zh":"📌 核心句型","ja":"📌 フレーズ"},"🎭 Đóng vai":{"en":"🎭 Roleplay","zh":"🎭 角色扮演","ja":"🎭 ロールプレイ"},"⚡ Phản xạ":{"en":"⚡ Quick Reflex","zh":"⚡ 快速反应","ja":"⚡ 瞬間英作文"},"Sang phần Mẫu câu then chốt ➔":{"en":"Go to Key Phrases ➔","zh":"进入核心句型 ➔","ja":"フレーズへ ➔"},"Sang phần Đóng vai ➔":{"en":"Go to Roleplay ➔","zh":"进入角色扮演 ➔","ja":"ロールプレイへ ➔"},"Sang phần Phản xạ nhanh ➔":{"en":"Go to Quick Reflex ➔","zh":"进入快速反应 ➔","ja":"瞬間英作文へ ➔"},"🎭 Đóng vai thực tế":{"en":"🎭 Real-Life Roleplay","zh":"🎭 实景角色扮演","ja":"🎭 実践ロールプレイ"},"⚡ Phản xạ nhanh (nói tiếng Anh trong vài giây)":{"en":"⚡ Quick Reflex (Respond in seconds)","zh":"⚡ 快速反应（几秒内用英语作答）","ja":"⚡ 瞬間スピーキング（数秒で応答）"},"🎙️ Nói câu trả lời":{"en":"🎙️ Speak response","zh":"🎙️ 语音回答","ja":"🎙️ 音声で回答"},"🔄 Nói lại":{"en":"🔄 Speak again","zh":"🔄 重说一次","ja":"🔄 もう一度話す"},"⌨️ Gõ thử":{"en":"⌨️ Type answer","zh":"⌨️ 键盘输入","ja":"⌨️ 入力して試す"},"🎙️ Phản xạ ngay":{"en":"🎙️ Respond now","zh":"🎙️ 立即反应","ja":"🎙️ 今すぐ応答"},"🔄 Phản xạ lại":{"en":"🔄 Try again","zh":"🔄 再试一次","ja":"🔄 やり直す"},"⏱️ Mục tiêu ≤ 8s":{"en":"⏱️ Target ≤ 8s","zh":"⏱️ 目标 ≤ 8秒","ja":"⏱️ 目標 ≤ 8秒"},"‹ Trước":{"en":"‹ Prev","zh":"‹ 上一天","ja":"‹ 前へ"},"Sau ›":{"en":"Next ›","zh":"下一天 ›","ja":"次へ ›"},"Danh mục 30 ngày ▾":{"en":"30-Day Index ▾","zh":"30天目录 ▾","ja":"30日目次 ▾"},"Thu gọn ▴":{"en":"Collapse ▴","zh":"收起 ▴","ja":"閉じる ▴"},"Xem 4 chặng":{"en":"View 4 stages","zh":"查看4个阶段","ja":"4ステージを見る"},"Chọn nhóm kỹ năng cần rèn luyện":{"en":"Choose a skill to practice","zh":"选择要训练的技能","ja":"練習するスキルを選択"},"🎯 Chọn nhóm kỹ năng cần rèn luyện":{"en":"🎯 Choose a skill to practice","zh":"🎯 选择要训练的技能","ja":"🎯 練習するスキルを選択"},"📖 Ngữ pháp Tiếng Anh":{"en":"📖 English Grammar","zh":"📖 英语语法","ja":"📖 英文法"},"📖 Từ điển":{"en":"📖 Dictionary","zh":"📖 词典","ja":"📖 辞書"},"Kiến thức Tiếng Anh":{"en":"English Knowledge","zh":"英语知识","ja":"英語知識"},"Kiến thức & Ngữ pháp Tiếng Anh":{"en":"English Knowledge & Grammar","zh":"英语知识与语法","ja":"英語知識・文法"},"Mở ngay →":{"en":"Open →","zh":"立即打开 →","ja":"開く →"},"Đọc báo →":{"en":"Read news →","zh":"阅读新闻 →","ja":"ニュースへ →"},"Chơi ngay →":{"en":"Play now →","zh":"立即开始 →","ja":"プレイ →"},"Học ngay →":{"en":"Study now →","zh":"立即学习 →","ja":"今すぐ学習 →"},"Luyện ngay →":{"en":"Practice now →","zh":"立即练习 →","ja":"今すぐ練習 →"},"Mở từ điển →":{"en":"Open dictionary →","zh":"打开词典 →","ja":"辞書を開く →"},"Học ngữ pháp →":{"en":"Study grammar →","zh":"学习语法 →","ja":"文法を学ぶ →"},"Chinh phục IELTS →":{"en":"IELTS Prep →","zh":"备战雅思 →","ja":"IELTS対策へ →"},"Đọc hiểu & Trò chơi":{"en":"Reading & Games","zh":"阅读与游戏","ja":"読解 & ゲーム"},"‹ Câu trước":{"en":"‹ Previous","zh":"‹ 上一题","ja":"‹ 前の問題"},"Câu sau ›":{"en":"Next ›","zh":"下一题 ›","ja":"次の問題 ›"},"📝 Nộp bài":{"en":"📝 Submit Exam","zh":"📝 交卷","ja":"📝 提出する"},"🔄 Đổi đề":{"en":"🔄 New Exam","zh":"🔄 换一套题","ja":"🔄 別の問題"},"✓ Đúng":{"en":"✓ Correct","zh":"✓ 正确","ja":"✓ 正解"},"✗ Sai":{"en":"✗ Wrong","zh":"✗ 错误","ja":"✗ 不正解"},"✗ Bỏ trống":{"en":"✗ Unanswered","zh":"✗ 未作答","ja":"✗ 未回答"},"💡 Giải thích: ":{"en":"💡 Explanation: ","zh":"💡 解析：","ja":"💡 解説："},"📝 Thi vượt cấp HSK (1–9)":{"en":"📝 HSK Level-Up Exam (1–9)","zh":"📝 HSK 跳级考试 (1–9)","ja":"📝 HSK 飛び級試験 (1–9)"},"Vào Luyện IELTS →":{"en":"Go to IELTS Prep →","zh":"进入雅思备考 →","ja":"IELTS対策へ →"},"Vào Ngữ pháp →":{"en":"Go to Grammar →","zh":"进入语法 →","ja":"文法へ →"},"Thành tích & Huy hiệu":{"en":"Achievements & Badges","zh":"成就与徽章","ja":"実績・バッジ"},"Bước đầu tiên":{"en":"First Step","zh":"第一步","ja":"最初の一歩"},"Hoàn thành bài học đầu tiên":{"en":"Complete your first lesson","zh":"完成第一课","ja":"最初のレッスンを完了"},"Ba ngày liền":{"en":"3-Day Streak","zh":"连续三天","ja":"3日連続"},"Đạt mục tiêu Tiếng Anh 3 ngày liên tiếp":{"en":"Reach your goal 3 days in a row","zh":"连续3天达成目标","ja":"3日連続で目標達成"},"Một tuần bền bỉ":{"en":"7-Day Streak","zh":"1週間継続"},"Đạt mục tiêu Tiếng Anh 7 ngày liên tiếp":{"en":"Reach your goal 7 days in a row","zh":"连续7天达成目标","ja":"7日連続で目標達成"},"Đạt mục tiêu một thứ tiếng 3 ngày liên tiếp":{"en":"Reach a 3-day streak","zh":"连续3天达成语言目标","ja":"3日連続で目標達成"},"Đạt mục tiêu một thứ tiếng 7 ngày liên tiếp":{"en":"Reach a 7-day streak","zh":"连续7天达成语言目标","ja":"7日連続で目標達成"},"Trăm từ":{"en":"100 Words","zh":"百词斩","ja":"100語達成"},"100 từ trong hàng ôn tập":{"en":"100 words in your review queue","zh":"100个词进入复习队列","ja":"100語が復習キューに"},"Tai nghe nhạy bén":{"en":"Sharp Listener","zh":"敏锐听力","ja":"リスニング達人"},"Hoàn thành 10 tiết học hoặc luyện nghe IELTS":{"en":"Complete 10 lessons or IELTS listening","zh":"完成10节课程或雅思听力","ja":"10レッスンまたはIELTSリスニング完了"},"Dám mở lời":{"en":"Fearless Speaker","zh":"敢于开口","ja":"スピーキング挑戦"},"Nói đạt từ 80% ở 20 câu":{"en":"Score 80%+ on 20 spoken phrases","zh":"20句口语达到80%以上","ja":"20文でスピーキング80%以上"},"Ngòi bút chuyên nghiệp":{"en":"Pro Writer","zh":"专业写手","ja":"ライティング達人"},"Luyện viết 5 bài email hoặc IELTS Writing":{"en":"Complete 5 emails or IELTS writing tasks","zh":"完成5篇邮件或雅思写作","ja":"メールまたはIELTSライティング5件完了"},"Nắn nót":{"en":"Calligrapher","zh":"工整书写","ja":"美文字マスター"},"Tập viết 50 chữ khác nhau":{"en":"Practice writing 50 unique characters","zh":"练习书写50个不同汉字","ja":"50種類の文字を書き取り練習"},"Đủ cả ba":{"en":"Trilingual Day","zh":"三语达标","ja":"3言語制覇"},"Ba thứ tiếng":{"en":"Polyglot","zh":"三语通","ja":"ポリグロット"},"Cài đặt lộ trình & Khảo sát trình độ":{"en":"Study Plan & Level Survey","zh":"学习计划与水平测试","ja":"学習設定・レベル診断"},"Bật lịch nhắc thông minh theo thứ trong tuần":{"en":"Enable smart weekly schedule","zh":"启用智能每周学习安排","ja":"曜日別のスマートスケジュールを有効化"},"Thời lượng mục tiêu mỗi ngày":{"en":"Daily time goal","zh":"每日学习时长目标","ja":"1日の目標時間"},"Mục tiêu mỗi ngày (phút hoặc từ tương ứng)":{"en":"Daily goal","zh":"每日目标","ja":"1日の目標"},"Nhẹ nhàng · 10 phút/ngày (Đạt mốc tối thiểu)":{"en":"Light · 10 min/day (Minimum)","zh":"轻松 · 每天10分钟（最低标准）","ja":"ライト · 1日10分（最小目標）"},"Vừa phải · 20 phút/ngày (Khuyên dùng)":{"en":"Moderate · 20 min/day (Recommended)","zh":"适中 · 每天20分钟（推荐）","ja":"標準 · 1日20分（おすすめ）"},"Chuyên sâu · 30 phút/ngày (Tiến bộ nhanh)":{"en":"Intensive · 30 min/day (Fast track)","zh":"强化 · 每天30分钟（快速提升）","ja":"集中 · 1日30分（スピード上達）"},"Hệ thống tự động tính thời gian học thực tế (ít nhất 10 phút/ngày để giữ Streak).":{"en":"Automatically tracks active study time (at least 10 min/day to keep your streak).","zh":"系统自动统计有效学习时间（每天至少10分钟保持连续打卡）。","ja":"実際の学習時間を自動計測します（連続記録維持には1日10分以上）。"},"Thêm vào màn hình chính trên iPhone: mở link bằng Safari, bấm Chia sẻ, chọn “Thêm vào MH chính”.":{"en":"Add to iPhone Home Screen: open in Safari, tap Share, choose “Add to Home Screen”.","zh":"添加到 iPhone 主屏幕：在 Safari 打开链接，点击分享并选择“添加到主屏幕”。","ja":"iPhoneのホーム画面に追加：Safariで開き、共有から「ホーム画面に追加」を選択。"},"Góp ý & Báo lỗi cho AI":{"en":"Feedback & Bug Report","zh":"反馈与报错","ja":"フィードバック・不具合報告"},"Góp ý & Báo lỗi":{"en":"Feedback & Bug Report","zh":"反馈与报错","ja":"フィードバック・報告"},"Phát hiện câu sai, lỗi âm thanh hay cần tính năng mới?":{"en":"Spotted a typo, audio bug, or want a new feature?","zh":"发现错题、音频问题或有新功能建议？","ja":"誤字、音声の不具合、新機能のリクエストがありますか？"},"Góp ý ngay":{"en":"Send feedback","zh":"立即反馈","ja":"報告する"},"Đồng bộ đám mây & Chuyển tiến độ":{"en":"Cloud Sync & Progress Transfer","zh":"云端同步与进度迁移","ja":"クラウド同期・データ移行"},"Cấu hình GitHub Gist hoặc xuất/nhập mã tiến độ":{"en":"Configure GitHub Gist or export/import code","zh":"配置 GitHub Gist 或导入/导出进度码","ja":"GitHub Gist設定または引き継ぎコード"},"Đã kết nối":{"en":"Connected","zh":"已连接","ja":"接続済み"},"Thủ công":{"en":"Manual","zh":"手动","ja":"手動"},"Chuyển tiến độ":{"en":"Transfer progress","zh":"迁移进度","ja":"進捗を引き継ぐ"},"Sao chép mã tiến độ":{"en":"Copy progress code","zh":"复制进度码","ja":"進捗コードをコピー"},"Dán mã để gộp":{"en":"Paste code to merge","zh":"粘贴代码并合并","ja":"コードを貼り付けて統合"},"Dùng khi học cả bản trên Claude và bản web. Sao chép mã ở bản này, dán vào bản kia. Tiến độ được gộp, không bị ghi đè.":{"en":"Use across devices: copy the code from one device and paste into another to merge safely.","zh":"在多设备间使用：复制此设备进度码并粘贴到另一设备，进度将智能合并而不覆盖。","ja":"複数端末での利用に：コードをコピーして別の端末に貼り付けると進捗が統合されます。"},"Xóa tiến độ và học lại từ đầu":{"en":"Reset all progress","zh":"清空进度并重新开始","ja":"すべての進捗をリセット"},"bài đã học":{"en":"lessons done","zh":"已学课程","ja":"完了レッスン"},"mục đang ôn":{"en":"items in SRS","zh":"复习中项目","ja":"復習中"},"đã nhớ chắc":{"en":"mastered","zh":"已掌握","ja":"定着済み"},"tổng thời gian học":{"en":"total study time","zh":"累计学习时间","ja":"累計学習時間"},"chuỗi ngày · dài nhất 0":{"en":"streak · best 0","zh":"连续 · 最长 0","ja":"連続 · 最長 0"},"Phút học Anh 7 ngày qua":{"en":"English study minutes (last 7 days)","zh":"最近7天英语学习时长","ja":"過去7日間の英語学習時間"},"Phút học 7 ngày qua":{"en":"Study minutes (last 7 days)","zh":"最近7天学习时长","ja":"過去7日間の学習時間"},"Loại vấn đề":{"en":"Issue type","zh":"问题类型","ja":"問題の種類"},"Nội dung chi tiết":{"en":"Details","zh":"详细说明","ja":"詳細内容"},"Mở GitHub Issue":{"en":"Open GitHub Issue","zh":"提交 GitHub Issue","ja":"GitHub Issueを開く"},"📋 Sao chép nội dung gửi AI":{"en":"📋 Copy report text","zh":"📋 复制反馈内容","ja":"📋 報告内容をコピー"},"AI sẽ tiếp nhận và sửa lỗi ngay":{"en":"Reports go straight to the tracker","zh":"AI 将及时处理反馈","ja":"不具合をすぐに確認・修正します"},"📍 Vị trí đang học:":{"en":"📍 Current location:","zh":"📍 当前位置：","ja":"📍 現在の画面："},"✏️ Sai đáp án / từ vựng":{"en":"✏️ Wrong answer / vocab","zh":"✏️ 答案/词汇错误","ja":"✏️ 解答・単語の誤り"},"🔊 Lỗi âm thanh / giọng đọc":{"en":"🔊 Audio / voice issue","zh":"🔊 音频/发音问题","ja":"🔊 音声・発音の不具合"},"📱 Lỗi giao diện / hiển thị":{"en":"📱 UI / layout bug","zh":"📱 界面/显示异常","ja":"📱 表示・レイアウトの不具合"},"💡 Đề xuất tính năng mới":{"en":"💡 Feature request","zh":"💡 新功能建议","ja":"💡 新機能のリクエスト"},"❓ Khác":{"en":"❓ Other","zh":"❓ 其他","ja":"❓ その他"},"⚙ Cấu hình tự động đồng bộ (GitHub Gist)":{"en":"⚙ Cloud Sync Settings (GitHub Gist)","zh":"⚙ 云端自动同步设置 (GitHub Gist)","ja":"⚙ クラウド自動同期設定 (GitHub Gist)"},"📊 Tiến độ ngôn ngữ":{"en":"📊 Language Progress","zh":"📊 语言进度","ja":"📊 言語別の進捗"},"📅 Thời gian biểu":{"en":"📅 Weekly Schedule","zh":"📅 每周计划","ja":"📅 週間スケジュール"},"🚀 Lộ trình & Cán đích":{"en":"🚀 Roadmap & Target Date","zh":"🚀 路线与达成预测","ja":"🚀 ロードマップ・達成予測"},"🗺️ Lộ trình & Tiến độ":{"en":"🗺️ Roadmap & Progress","zh":"🗺️ 路线与进度","ja":"🗺️ ロードマップと進捗"},"🚀 Chọn tốc độ học để dự báo ngày cán đích:":{"en":"🚀 Choose study pace to forecast finish date:","zh":"🚀 选择学习节奏以预测完成日期：","ja":"🚀 学習ペースを選んで完了予定日を予測："},"📅 Lịch chuẩn (2-2-2-1)":{"en":"📅 Standard Plan (2-2-2-1)","zh":"📅 标准计划 (2-2-2-1)","ja":"📅 標準プラン (2-2-2-1)"},"📅 Lịch đều đặn (T2–T7)":{"en":"📅 Steady Plan (Mon–Sat)","zh":"📅 稳定计划 (周一至六)","ja":"📅 毎日プラン (月〜土)"},"⚡ 1 bài/ngày":{"en":"⚡ 1 lesson/day","zh":"⚡ 每天1课","ja":"⚡ 1日1レッスン"},"🔥 2 bài/ngày":{"en":"🔥 2 lessons/day","zh":"🔥 每天2课","ja":"🔥 1日2レッスン"},"6 bài/tuần · CN tổng ôn":{"en":"6 lessons/wk · Sun review","zh":"每周6课 · 周日复习","ja":"週6レッスン・日曜復習"},"7 bài/tuần · Đều đặn mỗi ngày":{"en":"7 lessons/wk · Daily steady","zh":"每周7课 · 每天坚持","ja":"週7レッスン・毎日コツコツ"},"14 bài/tuần · Tăng tốc bứt phá":{"en":"14 lessons/wk · Intensive boost","zh":"每周14课 · 加速冲刺","ja":"週14レッスン・集中ブースト"},"📅 Chọn Thứ trong tuần để xem hôm đó học gì:":{"en":"📅 Pick a weekday to preview:","zh":"📅 选择星期查看当日安排：","ja":"📅 曜日を選んで学習内容を確認："},"Thứ Hai":{"en":"Monday","zh":"周一","ja":"月曜日"},"Thứ Ba":{"en":"Tuesday","zh":"周二","ja":"火曜日"},"Thứ Tư":{"en":"Wednesday","zh":"周三","ja":"水曜日"},"Thứ Năm":{"en":"Thursday","zh":"周四","ja":"木曜日"},"Thứ Sáu":{"en":"Friday","zh":"周五","ja":"金曜日"},"Thứ Bảy":{"en":"Saturday","zh":"周六","ja":"土曜日"},"Chủ Nhật":{"en":"Sunday","zh":"周日","ja":"日曜日"},"CN":{"en":"Sun","zh":"日","ja":"日"},"T2":{"en":"Mon","zh":"一","ja":"月"},"T3":{"en":"Tue","zh":"二","ja":"火"},"T4":{"en":"Wed","zh":"三","ja":"水"},"T5":{"en":"Thu","zh":"四","ja":"木"},"T6":{"en":"Fri","zh":"五","ja":"金"},"T7":{"en":"Sat","zh":"六","ja":"土"},"⚡ 5 từ (~2p · Ôn nhanh)":{"en":"⚡ 5 words (~2m · Quick)","zh":"⚡ 5词 (~2分 · 快速)","ja":"⚡ 5語 (~2分 · クイック)"},"🎯 10 từ (~4p · Chuẩn)":{"en":"🎯 10 words (~4m · Standard)","zh":"🎯 10词 (~4分 · 标准)","ja":"🎯 10語 (~4分 · 標準)"},"🔥 15 từ (~6p · Chuyên sâu)":{"en":"🔥 15 words (~6m · Deep)","zh":"🔥 15词 (~6分 · 强化)","ja":"🔥 15語 (~6分 · 集中)"},"Tổng hợp ngữ pháp HSK 1–9, hội thoại đọc hiểu, chiết tự chữ Hán, 214 bộ thủ Khang Hy và quy tắc bút thuận.":{"en":"HSK 1–9 grammar, dialogues, character etymology, 214 Kangxi radicals & stroke order rules.","zh":"汇总 HSK 1–9 语法、对话阅读、汉字拆解记忆、214 康熙部首与笔顺规则。","ja":"HSK 1〜9文法、会話読解、漢字分解、康熙部首214・筆順ルールを収録。"},"Tổng hợp ngữ pháp chuẩn JLPT N5–N1, tra cứu Kanji theo nét và bảng chữ cái Kana.":{"en":"JLPT N5–N1 grammar, Kanji stroke lookup, and Kana charts.","zh":"汇总 JLPT N5–N1 语法、按笔画查日文汉字及假名表。","ja":"JLPT N5〜N1文法、漢字画数検索、かな文字表を収録。"},"Hệ thống ngữ pháp chuẩn khung CEFR (A1–C1), phương pháp Deep Reading phân tích sâu và cẩm nang mẹo học phản xạ.":{"en":"CEFR (A1–C1) grammar guide, Deep Reading framework & fast-reflex tips.","zh":"CEFR (A1–C1) 语法体系、深度阅读分析法及快速反应学习指南。","ja":"CEFR (A1〜C1) 文法ガイド、精読フレームワーク、学習テクニック集。"},"🔍 Tìm kiếm ngữ pháp A1–C1, công thức, ví dụ...":{"en":"🔍 Search A1–C1 grammar, formulas, examples...","zh":"🔍 搜索 A1–C1 语法、公式、例句...","ja":"🔍 A1〜C1 文法・公式・例文を検索..."},"🔍 Tìm kiếm ngữ pháp N5–N1, từ khóa, ví dụ...":{"en":"🔍 Search N5–N1 grammar, keywords, examples...","zh":"🔍 搜索 N5–N1 语法、关键词、例句...","ja":"🔍 N5〜N1 文法・キーワード・例文を検索..."},"🔍 Tìm kiếm ngữ pháp HSK 1–9, Quyển 1–4, từ khóa...":{"en":"🔍 Search HSK 1–9 grammar, books, keywords...","zh":"🔍 搜索 HSK 1–9 语法、第1–4册、关键词...","ja":"🔍 HSK 1〜9 文法・第1〜4冊を検索..."},"🔍 Tìm theo chữ Hán, Pinyin, Hán Việt, cấu tạo bộ phận hoặc câu chuyện chiết tự...":{"en":"🔍 Search by Hanzi, Pinyin, parts, or memory story...","zh":"🔍 按汉字、拼音、部件或记字故事搜索...","ja":"🔍 漢字・ピンイン・部首・覚え方で検索..."},"🔍 Tìm bộ thủ (nhập chữ Hán, Pinyin hoặc nghĩa tiếng Việt)...":{"en":"🔍 Search radicals (Hanzi, Pinyin, or meaning)...","zh":"🔍 搜索部首（输入汉字、拼音或释义）...","ja":"🔍 部首を検索（漢字・ピンイン・意味）..."},"🔍 Tìm Kanji theo chữ, âm Hán Việt, On, Kun...":{"en":"🔍 Search Kanji by character, On, or Kun...","zh":"🔍 按字形、音读、训读搜索日文汉字...","ja":"🔍 漢字・音読み・訓読みで検索..."},"📖 Ngữ pháp HSK":{"en":"📖 HSK Grammar","zh":"📖 HSK 语法","ja":"📖 HSK 文法"},"📖 Ngữ pháp JLPT":{"en":"📖 JLPT Grammar","zh":"📖 JLPT 语法","ja":"📖 JLPT 文法"},"🧩 Chiết tự & Mẹo nhớ chữ":{"en":"🧩 Character Etymology","zh":"🧩 汉字拆解记忆","ja":"🧩 漢字の成り立ち"},"🈴 Bộ thủ & Bút thuận":{"en":"🈴 Radicals & Strokes","zh":"🈴 部首与笔顺","ja":"🈴 部首と筆順"},"🈴 Chữ Hán Kanji":{"en":"🈴 Kanji Characters","zh":"🈴 日语汉字 Kanji","ja":"🈴 漢字 (Kanji)"},"🔤 Bảng chữ cái":{"en":"🔤 Kana Charts","zh":"🔤 五十音图","ja":"🔤 かな文字表"},"🔤 Bảng 46 Chữ Cái Tiếng Nhật":{"en":"🔤 Japanese 46 Kana Chart","zh":"🔤 日语46五十音图","ja":"🔤 日本語 46仮名表"},"🈴 Bộ thủ thường gặp nhất":{"en":"🈴 Most Common Radicals","zh":"🈴 最常见部首","ja":"🈴 よく使う部首"},"7 Quy tắc bút thuận viết chữ Hán":{"en":"7 Chinese Stroke Order Rules","zh":"汉字笔顺七大规则","ja":"漢字の筆順7ルール"},"🎯 Luyện Quiz Ngữ Pháp":{"en":"🎯 Grammar Quiz","zh":"🎯 语法测验","ja":"🎯 文法クイズ"},"📝 Quiz 10 câu":{"en":"📝 10-Q Quiz","zh":"📝 10题测验","ja":"📝 10問クイズ"},"⚡ Bài tập kiểm tra nhanh":{"en":"⚡ Quick Check Quiz","zh":"⚡ 快速小测","ja":"⚡ クイック確認テスト"},"✕ Thu gọn bài tập":{"en":"✕ Collapse quiz","zh":"✕ 收起练习","ja":"✕ テストを閉じる"},"🎤 Khẩu ngữ HSKK (3–6)":{"en":"🎤 HSKK Speaking (3–6)","zh":"🎤 HSKK 口语 (3–6)","ja":"🎤 HSKK スピーキング (3–6)"},"Thi Vượt Cấp HSK (1–9)":{"en":"HSK Level-Up Exam (1–9)","zh":"HSK 跳级考试 (1–9)","ja":"HSK 飛び級試験 (1–9)"},"CHỌN CẤP ĐỘ THI HSK:":{"en":"SELECT HSK LEVEL:","zh":"选择 HSK 考试级别：","ja":"HSKレベルを選択："},"Tất cả cấp":{"en":"All Levels","zh":"全部级别","ja":"全レベル"},"Về màn hình chính":{"en":"Back to Home","zh":"返回主页","ja":"ホームへ戻る"},"Về Màn hình chính":{"en":"Back to Home","zh":"返回主页","ja":"ホームへ戻る"},"← Quay lại chọn ngôn ngữ":{"en":"← Back to Home","zh":"← 返回语言页","ja":"← 言語選択へ戻る"},"Về phòng thi":{"en":"Back to Exam Room","zh":"返回考场","ja":"試験室へ戻る"},"✕ Hủy bài thi":{"en":"✕ Cancel Exam","zh":"✕ 取消考试","ja":"✕ 試験を中止"},"🎉 CHÚC MỪNG BẠN ĐÃ ĐẠT!":{"en":"🎉 CONGRATULATIONS, YOU PASSED!","zh":"🎉 恭喜通过考试！","ja":"🎉 合格おめでとうございます！"},"Đạt từ 80% trở lên để vượt cấp!":{"en":"Score 80%+ to pass the level!","zh":"达到80%及以上即可跳级成功！","ja":"80%以上でレベル合格！"},"🎙️ Nói":{"en":"🎙️ Speaking","zh":"🎙️ 口语","ja":"🎙️ 話す"},"✍️ Viết":{"en":"✍️ Writing","zh":"✍️ 书写","ja":"✍️ 書く"},"📖 Đọc":{"en":"📖 Reading","zh":"📖 阅读","ja":"📖 読む"},"🎧 Nghe":{"en":"🎧 Listening","zh":"🎧 听力","ja":"🎧 聞く"},"✍️ Tập viết nét":{"en":"✍️ Stroke Practice","zh":"✍️ 笔画练习","ja":"✍️ 書き取り練習"},"Tập viết (không có nét mờ)":{"en":"Write without outline","zh":"盲写练习（无描红）","ja":"なぞり書きなし練習"},"Tập viết (có nét mờ)":{"en":"Trace with outline","zh":"描红练习","ja":"お手本なぞり練習"},"Hiện nét mờ":{"en":"Show outline","zh":"显示描红","ja":"お手本を表示"},"Ẩn nét mờ":{"en":"Hide outline","zh":"隐藏描红","ja":"お手本を隠す"},"Bỏ qua":{"en":"Skip","zh":"跳过","ja":"スキップ"},"Xóa":{"en":"Clear","zh":"清除","ja":"消去"},"Viết lại":{"en":"Rewrite","zh":"重写","ja":"書き直す"},"▶ Nghe cả bài":{"en":"▶ Play full audio","zh":"▶ 播放全篇","ja":"▶ 全体を再生"},"⏹ Dừng nghe cả bài":{"en":"⏹ Stop playback","zh":"⏹ 停止播放","ja":"⏹ 再生を停止"},"▶ Nghe bài nói":{"en":"▶ Play speech","zh":"▶ 播放语音","ja":"▶ 音声を再生"},"Ẩn dịch tiếng Việt":{"en":"Hide translation","zh":"隐藏翻译","ja":"訳を隠す"},"Hiện dịch tiếng Việt":{"en":"Show translation","zh":"显示翻译","ja":"訳を表示"},"6 Section (A1–C2) · 21 Unit · 87 chủ đề":{"en":"6 Sections (A1–C2) · 21 Units · 87 topics","zh":"6个阶段 (A1–C2) · 21单元 · 87主题","ja":"6セクション (A1–C2) · 21ユニット · 87課"},"🗺️ 6 Section (A1–C2) · 21 Unit · 87 chủ đề":{"en":"🗺️ 6 Sections (A1–C2) · 21 Units · 87 topics","zh":"🗺️ 6个阶段 (A1–C2) · 21单元 · 87主题","ja":"🗺️ 6セクション (A1–C2) · 21ユニット · 87課"},"6 chuyên đề · 117 bài nghe chuẩn Studio":{"en":"6 categories · 117 studio audio lessons","zh":"6个专题 · 117节高清听力课","ja":"6カテゴリ · 117本のスタジオ音声レッスン"},"📚 6 chuyên đề · 117 bài nghe chuẩn Studio":{"en":"📚 6 categories · 117 studio audio lessons","zh":"📚 6个专题 · 117节高清听力课","ja":"📚 6カテゴリ · 117本のスタジオ音声"},"30 đoạn hội thoại đời sống & công sở ngắn gọn, tốc độ tự nhiên":{"en":"30 natural everyday & workplace dialogues","zh":"30段自然语速的日常与职场短对话","ja":"30本の自然な日常・ビジネス会話"},"Giao tiếp cấp tốc, 117+ bài nghe chép chính tả & nói đuổi Shadowing":{"en":"30-day speaking, 117+ dictation & shadowing lessons","zh":"30天速成口语、117+听写与影子跟读","ja":"30日英会話、117+ディクテーション＆シャドーイング"},"Đọc báo theo cấp độ A1–B2, tra nghĩa và làm quiz.":{"en":"Read graded A1–B2 articles, check meanings & take quizzes.","zh":"阅读 A1–B2 分级文章、查词义并做小测。","ja":"A1〜B2レベル別記事を読み、意味確認とクイズ。"},"Đọc hiểu song ngữ theo cấp độ và trò chơi ghép cặp từ vựng":{"en":"Graded bilingual reading & vocabulary matching game","zh":"分级双语阅读与词汇配对游戏","ja":"レベル別バイリンガル読解と単語マッチングゲーム"},"Luyện nghe hội thoại dài B1–C2, Shadowing (nhại giọng), viết email công việc & chốt deal đơn hàng.":{"en":"B1–C2 long dialogues, Shadowing, business emails & deal closing.","zh":"B1–C2 长对话听力、影子跟读、商务邮件与成单沟通。","ja":"B1〜C2長文リスニング、シャドーイング、ビジネスメール。"},"Kết hợp từ vựng, nghe hội thoại thực tế, nói phản xạ & viết email công việc.":{"en":"Vocabulary, real dialogues, fast speaking & business emails.","zh":"词汇、真实对话、口语反应与商务邮件综合训练。","ja":"語彙・実践会話・瞬間スピーキング・ビジネスメール。"},"Luyện nói đuổi các mẫu hội thoại trong từng chủ đề đã học.":{"en":"Practice shadowing with dialogues from studied topics.","zh":"使用已学主题对话进行影子跟读训练。","ja":"学習済みトピックの会話でシャドーイング練習。"},"Săn lỗi ngữ pháp, ghép cụm động từ và hệ thống ngữ pháp A1–B2":{"en":"Grammar Bug Hunter, Phrasal Verbs & A1–B2 grammar system","zh":"语法找错、短语动词配对与 A1–B2 语法体系","ja":"文法エラー探し、句動詞パズル、A1〜B2文法体系"},"Shadowing · Hội thoại theo chủ đề":{"en":"Shadowing · Topic Dialogues","zh":"影子跟读 · 主题对话","ja":"シャドーイング · テーマ会話"},"Bug Hunter · Tìm lỗi ngữ pháp":{"en":"Bug Hunter · Spot Grammar Errors","zh":"语法猎手 · 找出语法错误","ja":"文法バグハンター · 誤り探し"},"Ghép câu · Cụm động từ (Phrasal Verbs)":{"en":"Sentence Builder · Phrasal Verbs","zh":"造句配对 · 短语动词","ja":"文作成 · 句動詞"},"Tìm lỗi":{"en":"Spot Error","zh":"找错","ja":"誤り探し"},"Cụm từ":{"en":"Phrases","zh":"短语","ja":"フレーズ"},"📖 Mở Cẩm nang đầy đủ ➔":{"en":"📖 Open Full Handbook ➔","zh":"📖 打开完整手册 ➔","ja":"📖 完全ガイドを開く ➔"},"💡 Cẩm nang & Mẹo học":{"en":"💡 Study Tips & Handbook","zh":"💡 学习手册与技巧","ja":"💡 学習ハンドブック・コツ"},"💡 7 chuyên đề Cẩm nang":{"en":"💡 7 Handbook Modules","zh":"💡 7大技巧专题","ja":"💡 7つの攻略ガイド"},"🎧 IELTS Listening · Bài nghe thực tế":{"en":"🎧 IELTS Listening · Real Audio","zh":"🎧 雅思听力 · 实战音频","ja":"🎧 IELTS リスニング · 本番音声"},"✨ Đề thi IELTS 2026 (Mới nhất)":{"en":"✨ IELTS 2026 Exams (Latest)","zh":"✨ 2026 最新雅思真题","ja":"✨ 2026 最新IELTS試験"},"⚡ 2026 Mới nhất":{"en":"⚡ 2026 Latest","zh":"⚡ 2026 最新","ja":"⚡ 2026 最新"},"📊 Bảng điểm TRF":{"en":"📊 TRF Score Report","zh":"📊 TRF 成绩单","ja":"📊 TRF スコア表"},"📄 Xem Đề PDF Gốc":{"en":"📄 View Original PDF","zh":"📄 查看原版 PDF","ja":"📄 原本PDFを見る"},"⬇️ Tải MP3":{"en":"⬇️ Download MP3","zh":"⬇️ 下载 MP3","ja":"⬇️ MP3をダウンロード"},"⬇️ Tải MP3 Gốc":{"en":"⬇️ Download Original MP3","zh":"⬇️ 下载原声 MP3","ja":"⬇️ 原音MP3をダウンロード"},"⏪ Nghe lại từ đầu":{"en":"⏪ Restart audio","zh":"⏪ 从头播放","ja":"⏪ 最初から再生"},"📜 Xem Transcript & Nghe từng câu ▾":{"en":"📜 Transcript & Line Audio ▾","zh":"📜 查看原文与单句播放 ▾","ja":"📜 スクリプト＆文別再生 ▾"},"📝 Nhật ký lỗi (0)":{"en":"📝 Error Log (0)","zh":"📝 错题本 (0)","ja":"📝 ミス記録 (0)"},"Kho đề thi thực tế IELTS 2022–2026 (ieltsonlinetests.com) · 🎧 Nghe ➔ 🎙️ Nói ➔ 📖 Đọc ➔ ✍️ Viết":{"en":"IELTS 2022–2026 Exam Bank · 🎧 Listening ➔ 🎙️ Speaking ➔ 📖 Reading ➔ ✍️ Writing","zh":"IELTS 2022–2026 实战题库 · 🎧 听力 ➔ 🎙️ 口语 ➔ 📖 阅读 ➔ ✍️ 写作","ja":"IELTS 2022〜2026 実践問題集 · 🎧 聞く ➔ 🎙️ 話す ➔ 📖 読む ➔ ✍️ 書く"},"Chặng · Giao tiếp cấp tốc":{"en":"Stage · Crash Communication","zh":"阶段 · 速成口语","ja":"ステージ · スピード英会話"},"Chặng 1 · Nền tảng phản xạ":{"en":"Stage 1 · Core Reflexes","zh":"第1阶段 · 反应基础","ja":"ステージ1 · 基本リアクション"},"Chặng 2 · Công sở":{"en":"Stage 2 · Workplace","zh":"第2阶段 · 职场沟通","ja":"ステージ2 · ビジネス・職場"},"Chặng 3 · Đối tác và thương mại":{"en":"Stage 3 · Partners & Trade","zh":"第3阶段 · 商务合作","ja":"ステージ3 · 取引先・商談"},"Chặng 4 · Du lịch và đời sống":{"en":"Stage 4 · Travel & Life","zh":"第4阶段 · 旅行生活","ja":"ステージ4 · 旅行・日常"},"Chặng 2 · 30 ngày IELTS Listening":{"en":"Stage 2 · 30-Day IELTS Listening","zh":"第2阶段 · 30天雅思听力","ja":"ステージ2 · 30日IELTSリスニング"},"Chặng 3 · Đề IELTS 2022–2026 (4 kỹ năng)":{"en":"Stage 3 · IELTS 2022–2026 (4 Skills)","zh":"第3阶段 · 雅思2022–2026真题（四科）","ja":"ステージ3 · IELTS 2022〜2026（4技能）"},"Chặng 4 · Ngữ pháp CEFR (A1–C1)":{"en":"Stage 4 · CEFR Grammar (A1–C1)","zh":"第4阶段 · CEFR 语法 (A1–C1)","ja":"ステージ4 · CEFR文法 (A1〜C1)"},"Bấm vào từng ngày để mở bài rộng rãi":{"en":"Tap any day to open full screen","zh":"点击任意一天进入全屏练习","ja":"各日をタップして全画面で開く"},"Cách phân bổ học bài mới và ôn SRS nhẹ nhàng":{"en":"How new lessons & SRS reviews are scheduled","zh":"新课学习与 SRS 复习的科学分配","ja":"新規レッスンとSRS復習の配分方法"},"Nguyên tắc Lịch học & Chia gói ôn":{"en":"Schedule & Review Batch Rules","zh":"学习计划与分批复习原则","ja":"スケジュール・復習バッチの方針"},"Trọng tâm kỹ năng theo 3 Giai đoạn":{"en":"Skill Focus by 3 Phases","zh":"三阶段技能重点","ja":"3フェーズ別の重点スキル"},"Tháng 1–3 Nền tảng · Tháng 4–6 Tăng tốc · Tháng 6+ Duy trì":{"en":"Mo 1–3 Basics · Mo 4–6 Boost · Mo 6+ Mastery","zh":"1–3月基础 · 4–6月提速 · 6月+巩固","ja":"1〜3ヶ月 基礎 · 4〜6ヶ月 加速 · 6ヶ月+ 定着"},"🌱 Giai đoạn 1 (Tháng 1–3): Nền tảng":{"en":"🌱 Phase 1 (Months 1–3): Foundations","zh":"🌱 第1阶段 (1–3月)：夯实基础","ja":"🌱 フェーズ1 (1〜3ヶ月)：基礎固め"},"⚡ Giai đoạn 2 (Tháng 4–6): Giao tiếp & Công việc B1–B2":{"en":"⚡ Phase 2 (Months 4–6): Work & B1–B2","zh":"⚡ 第2阶段 (4–6月)：交际与职场 B1–B2","ja":"⚡ フェーズ2 (4〜6ヶ月)：実践・ビジネス B1–B2"},"🏆 Giai đoạn 3 (Tháng 6+): Học thuật C1–C2 & IELTS":{"en":"🏆 Phase 3 (Month 6+): Academic C1–C2 & IELTS","zh":"🏆 第3阶段 (6月+)：学术 C1–C2 与雅思","ja":"🏆 フェーズ3 (6ヶ月+)：アカデミック C1–C2 & IELTS"},"Tiến độ cấp độ hiện tại":{"en":"Current Level Progress","zh":"当前级别进度","ja":"現在のレベル進捗"},"Tiến độ toàn khóa":{"en":"Overall Course Progress","zh":"全课程总进度","ja":"コース全体の進捗"},"Xem lịch học cả tuần →":{"en":"Full weekly schedule →","zh":"查看整周计划 →","ja":"週間スケジュールを見る →"},"🌐 Cả 3 ngôn ngữ":{"en":"🌐 All 3 languages","zh":"🌐 全部3种语言","ja":"🌐 3言語すべて"},"↺ ÔN LẠI CHỦ ĐỀ":{"en":"↺ REVIEW TOPIC","zh":"↺ 复习主题","ja":"↺ トピック復習"},"Xóa tiến độ của toàn bộ ":{"en":"Reset progress for all ","zh":"清除全部进度：","ja":"すべての進捗をリセット："},"Xóa tiến độ bài này để học lại từ đầu":{"en":"Reset this lesson to start fresh","zh":"重置本课从头开始","ja":"このレッスンをリセットして最初から"},"Cambridge Giao tiếp":{"en":"Cambridge Everyday","zh":"剑桥日常交际","ja":"ケンブリッジ日常会話"},"Đang ghi âm... Hãy nói to và rõ câu trả lời vào micro:":{"en":"Recording... Speak clearly into the mic:","zh":"正在录音... 请对着麦克风清晰朗读：","ja":"録音中... マイクに向かってはっきりお話しください："},"Đang nhận diện giọng nói...":{"en":"Recognizing speech...","zh":"正在识别语音...","ja":"音声を認識しています..."},"Đã hoàn thành lượt ghi âm!":{"en":"Recording complete!","zh":"录音完成！","ja":"録音が完了しました！"},"Đang gửi lên GitHub...":{"en":"Pushing to GitHub...","zh":"正在同步到 GitHub...","ja":"GitHubへ送信中..."},"Đang kết nối...":{"en":"Connecting...","zh":"正在连接...","ja":"接続中..."},"Kết nối & Tự động sao lưu":{"en":"Connect & Auto Backup","zh":"连接并自动备份","ja":"接続して自動バックアップ"},"Không tải được MP3 · Dùng giọng đọc dự phòng":{"en":"MP3 unavailable · Using device voice","zh":"无法加载 MP3 · 改用系统语音","ja":"MP3読込不可 · 端末音声で再生"},"▶ Nghe bằng giọng dự phòng":{"en":"▶ Play fallback voice","zh":"▶ 使用备用语音播放","ja":"▶ 代替音声で再生"},"⏸ Tạm dừng":{"en":"⏸ Pause","zh":"⏸ 暂停","ja":"⏸ 一時停止"},"Đã tạm dừng":{"en":"Paused","zh":"已暂停","zh_alt":"paused","ja":"一時停止中"},"Đã nghe xong ✓":{"en":"Finished listening ✓","zh":"播放完毕 ✓","ja":"再生完了 ✓"},"Đã phát hết hội thoại ✓":{"en":"Dialogue finished ✓","zh":"对话播放完毕 ✓","ja":"会話の再生完了 ✓"},"⏹ Dừng ghi âm":{"en":"⏹ Stop recording","zh":"⏹ 停止录音","ja":"⏹ 録音停止"},"⏹ Dừng & Chấm điểm":{"en":"⏹ Stop & Grade","zh":"⏹ 停止并评分","ja":"⏹ 停止して採点"},"⏹ Dừng & Chấm":{"en":"⏹ Stop & Grade","zh":"⏹ 停止评分","ja":"⏹ 停止＆採点"},"Bấm micro để nói lại và nâng cao điểm số":{"en":"Tap mic to try again for a higher score","zh":"点击麦克风重说以提高分数","ja":"マイクを押して高得点に挑戦"},"Bấm micro để nói lại và nâng cao điểm":{"en":"Tap mic to try again for a higher score","zh":"点击麦克风重说以提高分数","ja":"マイクを押してもう一度録音"},"Bấm lần nữa để xóa toàn bộ tiến độ học Tiếng Anh":{"en":"Tap again to erase ALL English progress","zh":"再次点击将清空全部英语学习进度","ja":"もう一度押すと英語の進捗を全削除します"},"Bấm lần nữa để xóa toàn bộ tiến độ của cả ba thứ tiếng":{"en":"Tap again to erase ALL saved progress","zh":"再次点击将清空全部学习进度","ja":"もう一度押すと全進捗を削除します"},"Thu gọn ô nhập":{"en":"Hide input","zh":"收起输入框","ja":"入力欄を閉じる"},"Bỏ đánh dấu hoàn thành":{"en":"Unmark completed","zh":"取消完成标记","ja":"完了マークを外す"},"Đang tải nét chữ…":{"en":"Loading stroke data…","zh":"正在加载笔画数据…","ja":"書き順データを読み込み中…"},"Đã lưu mục tiêu.":{"en":"Goal saved.","zh":"目标已保存。","ja":"目標を保存しました。"},"Đã cập nhật chế độ lộ trình.":{"en":"Schedule setting updated.","zh":"学习计划设置已更新。","ja":"スケジュール設定を更新しました。"},"Đã xóa toàn bộ tiến độ và cập nhật lên máy chủ.":{"en":"All progress cleared & synced.","zh":"已清空所有进度并同步。","ja":"全進捗を削除して同期しました。"},"Anh":{"en":"English","zh":"英语","ja":"英語"},"Trung":{"en":"Chinese","zh":"中文","ja":"中国語"},"Nhật":{"en":"Japanese","zh":"日语","ja":"日本語"},"chữ đã viết":{"en":"chars written","zh":"已写汉字","ja":"書いた文字"},"thực học hôm nay":{"en":"active study today","zh":"今日实际学习","ja":"今日の学習時間"},"Cài đặt lộ trình & Mục tiêu":{"en":"Schedule & Goal Settings","zh":"学习计划与目标设置","ja":"スケジュール・目標設定"},"Hệ thống chỉ tính thời gian học khi bạn thực sự bấm vào học/ôn tập/luyện đề (ít nhất 10 phút/ngày để giữ Streak).":{"en":"Only counts active study time inside lessons, reviews, or exams (at least 10 min/day for Streak).","zh":"仅统计进入课程、复习或做题时的有效学习时间（每天至少10分钟以保持连击）。","ja":"レッスン・復習・試験を実際に学習している時間のみ計測（連続記録は1日10分以上）。"},"📖 Từ điển Trung Offline":{"en":"📖 Chinese Offline Dictionary","zh":"📖 中文离线词典","ja":"📖 中国語オフライン辞書"},"🔍 Tra chữ Hán, Pinyin (vd: nihao), Hán Việt hoặc nghĩa Việt...":{"en":"🔍 Search Hanzi, Pinyin, or meaning...","zh":"🔍 搜索汉字、拼音或释义...","ja":"🔍 漢字・ピンイン・意味を検索..."},"Từ vựng HSK":{"en":"HSK Vocab","zh":"HSK 词汇","ja":"HSK 語彙"},"Giao tiếp hàng ngày":{"en":"Daily Communication","zh":"日常交流","ja":"日常会話"},"Nghe nói phản xạ tự nhiên, du lịch & đời sống":{"en":"Natural listening & speaking for travel and daily life","zh":"自然听说反应、旅游与日常生活","ja":"旅行・日常の自然なリスニング＆会話"},"Công việc & Thương mại":{"en":"Work & Trade","zh":"职场与商务","ja":"仕事・ビジネス"},"Đàm phán, đơn hàng, họp hành & email tiếng Trung":{"en":"Negotiations, orders, meetings & Chinese emails","zh":"谈判、订单、会议与中文商务邮件","ja":"商談・受注・会議・中国語メール"},"Luyện thi HSK / HSKK":{"en":"HSK / HSKK Prep","zh":"HSK / HSKK 备考","ja":"HSK / HSKK 対策"},"Chinh phục chứng chỉ HSK 1–9 & HSKK nói":{"en":"Master HSK 1–9 & HSKK Speaking exams","zh":"攻克 HSK 1–9 与 HSKK 口语证书","ja":"HSK 1〜9・HSKKスピーキング合格を目指す"},"Học từ nền tảng Pinyin":{"en":"Start from Pinyin Basics","zh":"从拼音基础学起","ja":"ピンインの基礎から学ぶ"},"Thanh điệu, bộ thủ, chiết tự & viết chữ Hán":{"en":"Tones, radicals, etymology & Hanzi writing","zh":"声调、部首、拆字记忆与汉字书写","ja":"声調・部首・字源・漢字書き取り"},"Nhẹ nhàng":{"en":"Light","zh":"轻松","ja":"ライト"},"10 phút/ngày (Đạt mốc tối thiểu)":{"en":"10 min/day (Minimum)","zh":"每天 10 分钟（最低标准）","ja":"1日10分（最小目標）"},"20 phút/ngày (Khuyên dùng)":{"en":"20 min/day (Recommended)","zh":"每天 20 分钟（推荐）","ja":"1日20分（おすすめ）"},"30 phút/ngày (Tiến bộ nhanh)":{"en":"30 min/day (Fast track)","zh":"每天 30 分钟（快速提升）","ja":"1日30分（スピード上達）"},"Thông tin & Mục tiêu":{"en":"Profile & Goal","zh":"信息与目标","ja":"プロフィール・目標"},"Test nhanh trình độ":{"en":"Quick Level Check","zh":"快速水平测试","ja":"クイックレベル診断"},"Kiểm tra trình độ HSK":{"en":"HSK Level Check","zh":"HSK 水平测试","ja":"HSK レベル診断"},"Lộ trình gợi ý":{"en":"Recommended Path","zh":"推荐路线","ja":"おすすめコース"},"Chào mừng đến với Lingogo Chinese 🇨🇳":{"en":"Welcome to Lingogo Chinese 🇨🇳","zh":"欢迎来到 Lingogo Chinese 🇨🇳","ja":"Lingogo Chinese へようこそ 🇨🇳"},"Tên gọi của bạn":{"en":"Your name","zh":"你的名字","ja":"お名前"},"Nhập tên của bạn...":{"en":"Enter your name...","zh":"输入你的名字...","ja":"お名前を入力..."},"Gợi ý lộ trình":{"en":"Recommended Path","zh":"推荐路线","ja":"おすすめコース"},"Google Dịch ↗":{"en":"Google Translate ↗","zh":"Google 翻译 ↗","ja":"Google 翻訳 ↗"},"Cambridge Online ↗":{"en":"Cambridge Online ↗","zh":"剑桥在线词典 ↗","ja":"Cambridge オンライン ↗"},"Phòng Luyện Thi JLPT":{"en":"JLPT Exam Prep Room","zh":"JLPT 备考室","ja":"JLPT 対策室"},"Luyện Thi JLPT (N5–N1)":{"en":"JLPT Exam Prep (N5–N1)","zh":"JLPT 备考 (N5–N1)","ja":"JLPT 対策 (N5〜N1)"},"Luyện thi HSK & HSKK":{"en":"HSK & HSKK Exam Prep","zh":"HSK 与 HSKK 备考","ja":"HSK・HSKK 対策"},"Luyện thi HSKK & HSK":{"en":"HSKK & HSK Exam Prep","zh":"HSKK 与 HSK 备考","ja":"HSKK・HSK 対策"},"Bắt đầu":{"en":"Start","zh":"开始","ja":"開始"},"Xác nhận":{"en":"Confirm","zh":"确认","ja":"確認"},"Hủy":{"en":"Cancel","zh":"取消","ja":"キャンセル"},"Lưu":{"en":"Save","zh":"保存","ja":"保存"},"Quên":{"en":"Again","zh":"忘记","ja":"忘れた"},"Khó":{"en":"Hard","zh":"困难","ja":"難しい"},"Nhớ":{"en":"Good","zh":"记得","ja":"覚えた"},"Dễ":{"en":"Easy","zh":"简单","ja":"簡単"},"Cần ôn kỹ":{"en":"Needs review","zh":"需加强","ja":"要復習"},"Thẻ mới":{"en":"New card","zh":"新卡","ja":"新規カード"},"Ngữ pháp":{"en":"Grammar","zh":"语法","ja":"文法"},"Chữ viết":{"en":"Characters","zh":"汉字","ja":"文字"},"Đọc báo":{"en":"News Reading","zh":"新闻阅读","ja":"ニュース"},"Trò chơi":{"en":"Games","zh":"游戏","ja":"ゲーム"},"Một ngày đạt mục tiêu cả Anh, Trung, Nhật":{"en":"Reach daily goal in English, Chinese & Japanese","zh":"同一天完成英、中、日三语目标","ja":"同じ日に英・中・日の目標を達成"},"Học ít nhất một bài mỗi thứ tiếng":{"en":"Complete at least one lesson per language","zh":"每种语言至少完成一课","ja":"各言語で最低1レッスン完了"},"Chăm chỉ":{"en":"Hardworking","zh":"勤奋好学","ja":"コツコツ継続"},"Đạt mục tiêu Tiếng Trung 3 ngày liên tiếp":{"en":"Reach Chinese goal 3 days in a row","zh":"连续3天达成中文目标","ja":"中国語目標を3日連続達成"},"Đạt mục tiêu Tiếng Trung 7 ngày liên tiếp":{"en":"Reach Chinese goal 7 days in a row","zh":"连续7天达成中文目标","ja":"中国語目標を7日連続達成"},"Hoàn thành 10 bài học Tiếng Trung":{"en":"Complete 10 Chinese lessons","zh":"完成10节中文课程","ja":"中国語レッスンを10課完了"},"Tập viết 50 chữ Hán khác nhau":{"en":"Practice writing 50 different Hanzi","zh":"练习书写50个不同汉字","ja":"50種類の漢字を書き取り練習"}};
+const UI_PATTERNS = [["^Mục tiêu (\\d+) phút/ngày · Trình độ (.+)$",{"en":"Goal $1 min/day · Level $2","zh":"目标每天 $1 分钟 · 级别 $2","ja":"目標 1日$1分 · レベル $2"}],["^Đang bật theo thứ · Mục tiêu (\\d+) phút/ngày$",{"en":"Weekly schedule active · Goal $1 min/day","zh":"已启用每周计划 · 目标每天 $1 分钟","ja":"週間スケジュール有効 · 目標 1日$1分"}],["^Đang tắt · Mục tiêu (\\d+) phút/ngày$",{"en":"Schedule off · Goal $1 min/day","zh":"计划已关闭 · 目标每天 $1 分钟","ja":"スケジュール無効 · 目標 1日$1分"}],["^Phút học (.+) 7 ngày qua$",{"en":"$1 study minutes (last 7 days)","zh":"最近7天$1学习时长","ja":"過去7日間の$1学習時間"}],["^tổng XP (.+)$",{"en":"total $1 XP","zh":"$1 总 XP","ja":"$1 累計XP"}],["^XP (.+) 7 ngày qua$",{"en":"$1 XP (last 7 days)","zh":"最近7天 $1 XP","ja":"過去7日間の$1 XP"}],["^Bước (\\d+)/3$",{"en":"Step $1/3","zh":"第 $1/3 步","ja":"ステップ $1/3"}],["^Chào (.+), hôm nay học gì\\?$",{"en":"Hi $1, what would you like to study today?","zh":"你好 $1，今天想学什么？","ja":"$1さん、今日は何を学びますか？"}],["^Chào (.+)!$",{"en":"Hi $1!","zh":"你好 $1！","ja":"こんにちは、$1さん！"}],["^▶ Học tiếp:\\s*(.+)$",{"en":"▶ Continue: $1","zh":"▶ 继续学习：$1","ja":"▶ 続き：$1"}],["^Học tiếp:\\s*(.+)$",{"en":"Next: $1","zh":"下一课：$1","ja":"次へ：$1"}],["^Học tiếp (.+) →$",{"en":"Continue $1 →","zh":"继续学习 $1 →","ja":"$1を続ける →"}],["^▶ Học Ngày (\\d+)(?::\\s*(.+))?$",{"en":"▶ Day $1","zh":"▶ 学习第 $1 天","ja":"▶ Day $1 を学ぶ"}],["^Ngày (\\d+)/(\\d+)(.*)$",{"en":"Day $1/$2$3","zh":"第 $1/$2 天$3","ja":"$1/$2日目$3"}],["^Tiến độ:\\s*(\\d+)/(\\d+) ngày \\((\\d+)%\\)$",{"en":"Progress: $1/$2 days ($3%)","zh":"进度：$1/$2 天 ($3%)","ja":"進捗：$1/$2日 ($3%)"}],["^✓ Hoàn thành Ngày (\\d+) & Lưu tiến độ$",{"en":"✓ Complete Day $1 & Save","zh":"✓ 完成第 $1 天并保存","ja":"✓ Day $1 を完了して保存"}],["^(\\d+)/(\\d+) ngày$",{"en":"$1/$2 days","zh":"$1/$2 天","ja":"$1/$2日"}],["^4 chặng · Hội thoại, mẫu câu, đóng vai & phản xạ tức thì \\((\\d+)/(\\d+) ngày · (\\d+)%\\)$",{"en":"4 stages · Dialogues, phrases, roleplay & quick reflex ($1/$2 days · $3%)","zh":"4个阶段 · 对话、句型、角色扮演与快速反应 ($1/$2 天 · $3%)","ja":"4ステージ · 会話、フレーズ、ロールプレイ、瞬間英作文 ($1/$2日 · $3%)"}],["^Câu (\\d+) / (\\d+)$",{"en":"Question $1 / $2","zh":"第 $1 / $2 题","ja":"問題 $1 / $2"}],["^Đã chọn:\\s*(\\d+)/(\\d+)$",{"en":"Answered: $1/$2","zh":"已选：$1/$2","ja":"回答済み：$1/$2"}],["^📋 Phòng thi (.+) \\((\\d+) câu\\)$",{"en":"📋 $1 Exam Room ($2 questions)","zh":"📋 $1 考场（$2题）","ja":"📋 $1 試験室（$2問）"}],["^Thi vượt cấp (HSK \\d+|JLPT N\\d+|.+)$",{"en":"$1 Level-Up Exam","zh":"$1 跳级考试","ja":"$1 飛び級試験"}],["^Thi vượt cấp (HSK \\d+|JLPT N\\d+) →$",{"en":"Take $1 Exam →","zh":"参加 $1 跳级考试 →","ja":"$1 飛び級試験へ →"}],["^🚀 Đề thi vượt cấp (HSK \\d+|JLPT N\\d+) \\((\\d+)/(\\d+) chủ đề\\)$",{"en":"🚀 $1 Level-Up Exam ($2/$3 topics)","zh":"🚀 $1 跳级考试（$2/$3 主题）","ja":"🚀 $1 飛び級試験（$2/$3 トピック）"}],["^Còn (\\d+)/(\\d+)$",{"en":"Left $1/$2","zh":"剩余 $1/$2","ja":"残り $1/$2"}],["^Còn (\\d+)$",{"en":"$1 left","zh":"剩余 $1","ja":"残り $1"}],["^🃏 Lật thẻ Flashcard bài này \\((\\d+) từ · FSRS\\)$",{"en":"🃏 Flip Lesson Flashcards ($1 words · FSRS)","zh":"🃏 翻转本课闪卡（$1词 · FSRS）","ja":"🃏 このレッスンのカード（$1語 · FSRS）"}],["^🎉 Đã lật xong (\\d+) thẻ Flashcard!$",{"en":"🎉 Finished flipping $1 flashcards!","zh":"🎉 已完成翻转 $1 张闪卡！","ja":"🎉 $1枚のカードをめくり終えました！"}],["^⚡ Tự động chấm: ([^()]+) \\(([^()]+)\\) · Ôn lại sau (.+)$",{"en":"⚡ Auto-rated: $1 ($2) · Next in $3","zh":"⚡ 自动评分：$1 ($2) · $3后复习","ja":"⚡ 自動評価：$1 ($2) · 次回 $3後"}],["^🔄 Ôn tập hôm nay: Còn (\\d+) từ(.*)$",{"en":"🔄 Today’s Review: $1 words due$2","zh":"🔄 今日复习：剩余 $1 词$2","ja":"🔄 今日の復習：残り $1語$2"}],["^Làm bài (\\d+)$",{"en":"Lesson $1","zh":"第 $1 课","ja":"レッスン $1"}],["^Làm lại bài (\\d+)$",{"en":"Redo Lesson $1","zh":"重做第 $1 课","ja":"レッスン $1 をやり直す"}],["^Bắt đầu · (\\d+) câu$",{"en":"Start · $1 questions","zh":"开始 · $1 题","ja":"開始 · $1問"}],["^Học lại bài này · (\\d+) câu$",{"en":"Study again · $1 questions","zh":"重新学习 · $1 题","ja":"もう一度学習 · $1問"}],["^(\\d+)/(\\d+) bài học$",{"en":"$1/$2 lessons","zh":"$1/$2 课","ja":"$1/$2 レッスン"}],["^(\\d+)/(\\d+) bài \\((\\d+)%\\)$",{"en":"$1/$2 topics ($3%)","zh":"$1/$2 课 ($3%)","ja":"$1/$2 トピック ($3%)"}],["^(\\d+) bài$",{"en":"$1 lessons","zh":"$1 课","ja":"$1 課"}],["^(\\d+) phút$",{"en":"$1 min","zh":"$1 分钟","ja":"$1 分"}],["^(\\d+) phút/ngày$",{"en":"$1 min/day","zh":"每天 $1 分钟","ja":"1日 $1分"}],["^(\\d+) câu hỏi$",{"en":"$1 questions","zh":"$1 题","ja":"$1 問"}],["^Tất cả \\((\\d+)\\)$",{"en":"All ($1)","zh":"全部 ($1)","ja":"すべて ($1)"}],["^Chưa xong \\((\\d+)\\)$",{"en":"Remaining ($1)","zh":"未完成 ($1)","ja":"未完了 ($1)"}],["^Đã xong \\((\\d+)\\)$",{"en":"Done ($1)","zh":"已完成 ($1)","ja":"完了 ($1)"}],["^(\\d+) mục(?: \\(hiện (\\d+)\\))?$",{"en":"$1 items","zh":"$1 条结果","ja":"$1 件"}],["^chuỗi ngày · dài nhất (\\d+)$",{"en":"streak · best $1","zh":"连续 · 最长 $1 天","ja":"連続 · 最長 $1日"}],["^Đã mở khóa (\\d+)/(\\d+) huy hiệu · Bấm để xem chi tiết$",{"en":"Unlocked $1/$2 badges · Tap for details","zh":"已解锁 $1/$2 枚徽章 · 点击查看详情","ja":"$1/$2個のバッジ獲得 · タップで詳細"}],["^Mục tiêu (\\d+) phút/ngày(.*)$",{"en":"Goal $1 min/day$2","zh":"目标每天 $1 分钟$2","ja":"目標 1日$1分$2"}],["^Lộ trình (.+): (\\d+)/(\\d+) bài \\((\\d+)%\\)$",{"en":"$1 Roadmap: $2/$3 topics ($4%)","zh":"$1 路线：$2/$3 课 ($4%)","ja":"$1 ロードマップ：$2/$3 トピック ($4%)"}],["^🚀 Lộ trình (.+): (\\d+)/(\\d+) bài \\((\\d+)%\\)$",{"en":"🚀 $1 Roadmap: $2/$3 topics ($4%)","zh":"🚀 $1 路线：$2/$3 课 ($4%)","ja":"🚀 $1 ロードマップ：$2/$3 トピック ($4%)"}],["^📌 Chọn nhanh chủ đề \\((\\d+) chủ đề\\)\\.\\.\\.$",{"en":"📌 Quick jump to topic ($1 topics)...","zh":"📌 快速选择主题（共 $1 课）...","ja":"📌 トピックを素早く選択（全$1課）..."}],["^Thành tích mới:\\s*(.+)$",{"en":"New achievement: $1","zh":"解锁新成就：$1","ja":"新しい実績：$1"}],["^Nghe phát âm & tra thêm cho “(.+)”:$",{"en":"Pronounce & look up “$1”:","zh":"朗读并在线查询“$1”：","ja":"「$1」の発音と外部検索："}],["^🎉 Đã hoàn thành Ngày (\\d+)/(\\d+)!$",{"en":"🎉 Completed Day $1/$2!","zh":"🎉 已完成第 $1/$2 天！","ja":"🎉 Day $1/$2 を完了しました！"}],["^Chặng (\\d+) · (.+)$",{"en":"Stage $1 · $2","zh":"第 $1 阶段 · $2","ja":"ステージ $1 · $2"}],["^Ngày (\\d+): (.+)$",{"en":"Day $1: $2","zh":"第 $1 天：$2","ja":"Day $1: $2"}],["^Lượt (\\d+)/(\\d+)$",{"en":"Turn $1/$2","zh":"第 $1/$2 轮","ja":"ターン $1/$2"}],["^Tình huống (\\d+)/(\\d+)$",{"en":"Prompt $1/$2","zh":"情景 $1/$2","ja":"シチュエーション $1/$2"}],["^Đã ghép:\\s*(\\d+)/(\\d+) cặp$",{"en":"Matched: $1/$2 pairs","zh":"已配对：$1/$2 组","ja":"一致：$1/$2 ペア"}],["^Đã học (\\d+)/(\\d+) bài \\((\\d+)/(\\d+) tiết luyện tập\\)$",{"en":"Studied $1/$2 topics ($3/$4 lessons)","zh":"已学 $1/$2 课（$3/$4 节练习）","ja":"$1/$2 トピック完了（$3/$4 レッスン）"}],["^(\\d+)/(\\d+) bộ đề hoàn tất · (\\d+)/(\\d+) kỹ năng$",{"en":"$1/$2 tests complete · $3/$4 skills","zh":"已完成 $1/$2 套试卷 · $3/$4 项技能","ja":"$1/$2 セット完了 · $3/$4 技能"}],["^(\\d+)/(\\d+) kỹ năng ✓$",{"en":"$1/$2 skills ✓","zh":"$1/$2 项技能 ✓","ja":"$1/$2 技能 ✓"}],["^📍 Chi tiết tiến độ (\\d+) cấp độ \\((\\d+)/(\\d+) xong\\)$",{"en":"📍 Progress across $1 levels ($2/$3 done)","zh":"📍 $1 个级别进度详情（已完成 $2/$3）","ja":"📍 $1レベルの進捗詳細（$2/$3 完了）"}],["^🎯 Định mức hôm nay:\\s*(.+)$",{"en":"🎯 Today’s quota: $1","zh":"🎯 今日定额：$1","ja":"🎯 本日のノルマ：$1"}],["^📦 Kho chờ luân phiên:\\s*(.+)$",{"en":"📦 Review backlog: $1","zh":"📦 轮换词库：$1","ja":"📦 待機ワード：$1"}],["^(\\d+) câu · Audio \\+ Đề & Đáp án$",{"en":"$1 Qs · Audio + Test & Key","zh":"$1 题 · 音频 + 试题与答案","ja":"$1問 · 音声＋問題＆解答"}],["^Phần (\\d+) · (.+)$",{"en":"Part $1 · $2","zh":"第 $1 部分 · $2","ja":"パート $1 · $2"}],["^Tốc độ:\\s*(.+)$",{"en":"Speed: $1","zh":"语速：$1","ja":"速度：$1"}],["^Điểm:\\s*(.+)$",{"en":"Score: $1","zh":"得分：$1","ja":"スコア：$1"}],["^Nghe (\\d+)/(\\d+)$",{"en":"Listening $1/$2","zh":"听力 $1/$2","ja":"リスニング $1/$2"}],["^(\\d+) nét$",{"en":"$1 strokes","zh":"$1 画","ja":"$1画"}],["^(\\d+) bộ$",{"en":"$1 radicals","zh":"$1 个部首","ja":"$1 部首"}],["^(\\d+) điểm$",{"en":"$1 points","zh":"$1 个语法点","ja":"$1 項目"}],["^(\\d+) câu$",{"en":"$1 questions","zh":"$1 题","ja":"$1 問"}],["^📝 Nhật ký lỗi \\((\\d+)\\)$",{"en":"📝 Error Log ($1)","zh":"📝 错题本 ($1)","ja":"📝 ミス記録 ($1)"}],["^Đã lưu mục tiêu (\\d+) phút/ngày\\.$",{"en":"Saved goal: $1 min/day.","zh":"已保存目标：每天 $1 分钟。","ja":"目標を1日$1分に保存しました。"}]].map(function(p) { return [new RegExp(p[0]), p[1]]; });
+const UI_WEEKDAYS = {
+  vi: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  zh: ['日', '一', '二', '三', '四', '五', '六'],
+  ja: ['日', '月', '火', '水', '木', '金', '土']
+};
+
+function getUiLang() {
+  try {
+    var cur = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.uiLang) || localStorage.getItem(UI_LANG_KEY) || (typeof S !== 'undefined' && S && S.uiLang) || 'vi';
+    return UI_LANGS[cur] ? cur : 'vi';
+  } catch (e) {
+    return 'vi';
+  }
+}
+
+function uiWeekdays() {
+  return UI_WEEKDAYS[getUiLang()] || UI_WEEKDAYS.vi;
+}
+
+function uiTr(str) {
+  if (str == null || typeof str !== 'string') return str;
+  var lang = getUiLang();
+  if (lang === 'vi' || !str) return str;
+  var trimmed = str.trim();
+  if (!trimmed) return str;
+  var hit = UI_EXACT[str] || UI_EXACT[trimmed];
+  if (hit && hit[lang]) {
+    if (str !== trimmed) {
+      var lead = str.match(/^\s*/)[0];
+      var tail = str.match(/\s*$/)[0];
+      return lead + hit[lang] + tail;
+    }
+    return hit[lang];
+  }
+  for (var i = 0; i < UI_PATTERNS.length; i++) {
+    var re = UI_PATTERNS[i][0], map = UI_PATTERNS[i][1];
+    var m = trimmed.match(re);
+    if (m && map[lang]) {
+      var out = map[lang].replace(/\$(\d)/g, function(_, idx) {
+        var val = m[Number(idx)] || '';
+        return UI_EXACT[val] && UI_EXACT[val][lang] ? UI_EXACT[val][lang] : val;
+      });
+      if (str !== trimmed) {
+        var l2 = str.match(/^\s*/)[0];
+        var t2 = str.match(/\s*$/)[0];
+        return l2 + out + t2;
+      }
+      return out;
+    }
+  }
+  return str;
+}
+
+function setUiLang(lang, silent) {
+  var next = UI_LANGS[lang] ? lang : 'vi';
+  try { localStorage.setItem(UI_LANG_KEY, next); } catch (e) {}
+  try {
+    document.documentElement.dataset.uiLang = next;
+    document.documentElement.lang = UI_LANGS[next].html;
+  } catch (e) {}
+  if (typeof S !== 'undefined' && S) {
+    S.uiLang = next;
+    try { save(); } catch (e) {}
+  }
+  try {
+    if (typeof VIEW !== 'undefined') {
+      if (typeof S !== 'undefined' && (!S || !S.name) && typeof welcomeView === 'function') {
+        welcomeView();
+      } else if (VIEW === 'pick' && typeof pickView === 'function') {
+        pickView();
+      } else if (VIEW === 'dict' && typeof dictView === 'function') {
+        dictView();
+      } else if (VIEW === 'crash30' && typeof crash30TabView === 'function') {
+        crash30TabView();
+      } else if (VIEW === 'practice' && typeof practiceTabView === 'function') {
+        practiceTabView();
+      } else if (VIEW === 'dictation' && typeof dictationTabView === 'function') {
+        dictationTabView();
+      } else if (VIEW === 'games' && typeof gamesTabView === 'function') {
+        gamesTabView();
+      } else if (VIEW === 'news' && typeof newsView === 'function') {
+        newsView();
+      } else if (typeof route === 'function') {
+        route();
+      }
+      var obOv = document.getElementById('onboarding-overlay');
+      if (obOv && typeof openOnboardingModal === 'function') { obOv.remove(); openOnboardingModal(true); }
+    }
+  } catch (e) {}
+  if (!silent && typeof toast === 'function') {
+    var msg = next === 'en' ? 'Display language: English' : (next === 'zh' ? '界面语言：中文' : (next === 'ja' ? '表示言語：日本語' : 'Ngôn ngữ hiển thị: Tiếng Việt'));
+    toast(msg);
+  }
+  return next;
+}
+window.setUiLang = setUiLang;
+window.getUiLang = getUiLang;
+
+function showUiLangModal() {
+  var existing = document.getElementById('ui-lang-modal');
+  if (existing) existing.remove();
+  var cur = getUiLang();
+  var mask = h('div', {
+    id: 'ui-lang-modal',
+    class: 'modal-mask',
+    style: { zIndex: '10000' },
+    onclick: function(e) { if (e.target === mask) mask.remove(); }
+  });
+  var opts = Object.keys(UI_LANGS).map(function(code) {
+    var info = UI_LANGS[code];
+    var isOn = code === cur;
+    return h('button', {
+      type: 'button',
+      class: 'ui-lang-opt' + (isOn ? ' active' : ''),
+      'data-no-i18n': '1',
+      onclick: function() {
+        mask.remove();
+        setUiLang(code);
+      }
+    },
+      h('span', { 'data-no-i18n': '1', style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+        h('span', { style: { fontSize: '1.25rem' } }, info.flag),
+        h('span', { 'data-no-i18n': '1' }, info.name)
+      ),
+      h('span', { style: { fontWeight: 700, color: 'var(--teal)' } }, isOn ? '✓' : '')
+    );
+  });
+  var box = h('div', { class: 'modal-box stack', style: { gap: '12px' } },
+    h('div', { class: 'row between', style: { alignItems: 'center' } },
+      h('b', { style: { fontSize: '1.05rem' } }, '🌐 Ngôn ngữ hiển thị'),
+      h('button', { type: 'button', class: 'ghost mini', onclick: function() { mask.remove(); }, 'aria-label': 'Đóng', style: { fontSize: '1.15rem', padding: '4px 8px' } }, '✕')
+    ),
+    h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn ngôn ngữ giao diện cho ứng dụng (độc lập với ngôn ngữ đang học).'),
+    h('div', { class: 'stack', style: { gap: '8px' } }, opts)
+  );
+  mask.appendChild(box);
+  document.body.appendChild(mask);
+}
+
+function uiLangBtn() {
+  var cur = getUiLang();
+  var info = UI_LANGS[cur] || UI_LANGS.vi;
+  return h('button', {
+    type: 'button',
+    class: 'ui-lang-btn',
+    'data-no-i18n': '1',
+    title: uiTr('Chọn ngôn ngữ hiển thị'),
+    'aria-label': uiTr('Chọn ngôn ngữ hiển thị'),
+    onclick: function(e) {
+      e.stopPropagation();
+      showUiLangModal();
+    }
+  }, '🌐 ' + info.short + ' ▾');
+}
+
+function uiLangSettingPanel() {
+  var cur = getUiLang();
+  var btns = Object.keys(UI_LANGS).map(function(code) {
+    var info = UI_LANGS[code];
+    return h('button', {
+      type: 'button',
+      class: 'pace-btn' + (cur === code ? ' active' : ''),
+      'aria-pressed': cur === code ? 'true' : 'false',
+      'data-ui-lang-opt': code,
+      'data-no-i18n': '1',
+      onclick: function() { setUiLang(code); }
+    }, h('span', { style: { fontSize: '1.1rem' } }, info.flag), h('span', { 'data-no-i18n': '1' }, info.name));
+  });
+  return h('div', { class: 'panel stack', style: { gap: '6px' } },
+    h('h3', {}, '🌐 Ngôn ngữ hiển thị'),
+    h('div', { class: 'pace-selector', role: 'group', 'aria-label': 'Chọn ngôn ngữ hiển thị', style: { margin: '4px 0 0', gridTemplateColumns: 'repeat(2, 1fr)' } }, btns),
+    h('p', { class: 'small muted', style: { margin: 0 } }, 'Chọn ngôn ngữ giao diện cho ứng dụng (độc lập với ngôn ngữ đang học).'));
+}
+
 function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
+  const noI18n = !!(attrs && (attrs.lang || attrs['data-no-i18n'])) || tag === 'style' || tag === 'script' || tag === 'code' || tag === 'pre';
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
@@ -3285,9 +3490,15 @@ function h(tag, attrs, ...kids) {
         }
       }
     }
-    else el.setAttribute(k, v === true ? '' : v);
+    else {
+      const av = (k === 'placeholder' || k === 'title' || k === 'aria-label') && typeof v === 'string' && !noI18n ? uiTr(v) : v;
+      el.setAttribute(k, av === true ? '' : av);
+    }
   }
-  for (const c of kids.flat(9)) if (c != null && c !== false) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  for (const c of kids.flat(9)) if (c != null && c !== false) {
+    if (c instanceof Node) el.append(c);
+    else el.append(document.createTextNode(typeof c === 'string' && !noI18n ? uiTr(c) : String(c)));
+  }
   return el;
 }
 // Ô tìm kiếm vẽ lại cả tab mỗi lần gõ: giữ focus + vị trí con trỏ, và không cắt ngang khi đang gõ bằng bộ gõ (IME).
@@ -3397,7 +3608,7 @@ function speakHeadline(code, text, raw, readingLine) {
 const appRoot = document.getElementById('app');
 function mount(...nodes) { appRoot.replaceChildren(...nodes.flat(9).filter((n) => n != null && n !== false)); window.scrollTo(0, 0); }
 let tt;
-function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
+function toast(m) { const t = document.getElementById('toast'); t.textContent = uiTr(m); t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2600); }
 const ICON = {
   github: 'M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z',
   home: 'M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z',
@@ -3529,7 +3740,7 @@ function setTabs(show) {
     return h('button', {
       'aria-current': isCur ? 'page' : null,
       onclick: () => go(k)
-    }, icon(d), label);
+    }, icon(d), uiTr(label));
   }));
 }
 function go(k) {
@@ -4404,14 +4615,14 @@ window.ieltsGradeDay = function(dayNum) {
       const chip = dayCard.querySelector('.ielts-status-chip-' + dayNum);
       if (chip) {
         chip.className = 'chip good ielts-status-chip-' + dayNum;
-        chip.textContent = 'Đã xong';
+        chip.textContent = uiTr('Đã xong');
       }
       const icon = dayCard.querySelector('.acc-main > span');
       if (icon) icon.textContent = '✅';
       const markBtn = document.querySelector('.ielts-mark-btn-' + dayNum);
       if (markBtn) {
         markBtn.className = 'ghost block ielts-mark-btn-' + dayNum;
-        markBtn.textContent = 'Bỏ đánh dấu hoàn thành';
+        markBtn.textContent = uiTr('Bỏ đánh dấu hoàn thành');
       }
     }
   }
@@ -4461,7 +4672,7 @@ window.updateIeltsTotalProgress = function() {
   const c2Card = document.getElementById('ielts_chang_2_card');
   if (c2Card) {
     const sub = c2Card.querySelector('.acc-sub');
-    if (sub) sub.textContent = doneDays + '/' + days.length + ' ngày · mỗi ngày 1 bài nghe bản xứ ~20 phút';
+    if (sub) sub.textContent = uiTr(doneDays + '/' + days.length + ' ngày · mỗi ngày 1 bài nghe bản xứ ~20 phút');
     const chip = c2Card.querySelector('.acc-summary .acc-right .chip');
     if (chip) {
       chip.textContent = doneDays + '/' + days.length;
@@ -4471,7 +4682,7 @@ window.updateIeltsTotalProgress = function() {
     const fill = c2Card.querySelector('.ielts-progress-fill');
     if (fill) fill.style.width = pct + '%';
     const pTxt = c2Card.querySelector('.ielts-progress-txt');
-    if (pTxt) pTxt.textContent = 'Tiến độ: ' + doneDays + '/' + days.length + ' ngày (' + pct + '%)';
+    if (pTxt) pTxt.textContent = uiTr('Tiến độ: ' + doneDays + '/' + days.length + ' ngày (' + pct + '%)');
   }
 };
 
@@ -4989,7 +5200,7 @@ function pickView() {
 
     mount(h('div', { class: 'stack-lg', style: { paddingTop: '16px' } },
       h('div', { class: 'stack', style: { gap: '4px' } },
-        h('p', { class: 'label' }, 'Lingogo Chinese'),
+        h('div', { class: 'row between', style: { alignItems: 'center' } }, h('p', { class: 'label', style: { margin: 0 } }, 'Lingogo Chinese'), uiLangBtn()),
         h('h1', {}, 'Chào ' + S.name + ', hôm nay học gì?')
       ),
       langChoices,
@@ -5027,7 +5238,7 @@ function pickView() {
         style: { minHeight: '36px', padding: '6px 14px', fontSize: '.85rem' },
         onclick: () => { PICK_HUB_OPEN = false; go('home'); }
       }, '← Về Trang chủ'),
-      h('span', { class: 'small muted' }, '🗺️ Lộ trình & Tiến độ')
+      h('div', { class: 'row', style: { gap: '8px', alignItems: 'center' } }, h('span', { class: 'small muted' }, '🗺️ Lộ trình & Tiến độ'), uiLangBtn())
     ),
     tabsBar,
     ...tabContent
@@ -5050,7 +5261,7 @@ function welcomeView() {
   const had = Object.keys(S.days).length > 0;
   mount(h('div', { class: 'stack-lg', style: { paddingTop: '24px' } },
     h('div', { class: 'stack' },
-      h('p', { class: 'label' }, 'Lingogo Chinese'),
+      h('div', { class: 'row between', style: { alignItems: 'center' } }, h('p', { class: 'label', style: { margin: 0 } }, 'Lingogo Chinese'), uiLangBtn()),
       h('h1', {}, 'Học để nói được, mỗi ngày một chút'),
       h('p', { class: 'muted' }, 'Học Tiếng Trung từ nền tảng đến nâng cao (HSK 1–9): từ vựng theo chủ đề, bộ thủ & chiết tự, tập viết chữ Hán, luyện nói & đề thi HSK/HSKK.'),
       had && h('p', { class: 'note' }, 'Đã có tiến độ cũ của bạn. Bạn sẽ học tiếp từ chỗ đã dừng.')),
@@ -5306,7 +5517,7 @@ function crash30DayView(dayNum) {
         onclick: () => {
           showDlgVi = !showDlgVi;
           viNodes.forEach((n) => { n.style.display = showDlgVi ? 'block' : 'none'; });
-          viBtn.textContent = showDlgVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa';
+          viBtn.textContent = uiTr(showDlgVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa');
         }
       }, showDlgVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa');
       const playAllBtn = h('button', {
@@ -5348,7 +5559,7 @@ function crash30DayView(dayNum) {
         onclick: () => {
           showPhrVi = !showPhrVi;
           viNodes.forEach((n) => { n.style.display = showPhrVi ? 'block' : 'none'; });
-          viBtn.textContent = showPhrVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa';
+          viBtn.textContent = uiTr(showPhrVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa');
         }
       }, showPhrVi ? '🙈 Ẩn nghĩa' : '👁️ Hiện nghĩa');
 
@@ -5389,13 +5600,13 @@ function crash30DayView(dayNum) {
           if (listening) return;
           listening = true;
           micBtn.disabled = true;
-          micBtn.textContent = '🎧 Đang nghe…';
+          micBtn.textContent = uiTr('🎧 Đang nghe…');
           const said = await tryListen('en', (interim) => {
             if (interim) statusEl.textContent = '🎧 ' + interim;
           });
           listening = false;
           micBtn.disabled = false;
-          micBtn.textContent = '🔄 Nói lại';
+          micBtn.textContent = uiTr('🔄 Nói lại');
           if (said) {
             const al = align('en', tn.say, said);
             rpResults[idx] = { said: said, score: al.score };
@@ -5467,7 +5678,7 @@ function crash30DayView(dayNum) {
           if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
           const tStart = Date.now();
           speakBtn.disabled = true;
-          speakBtn.textContent = '🎧 Đang nghe…';
+          speakBtn.textContent = uiTr('🎧 Đang nghe…');
           activeTimer = setInterval(() => {
             const sec = ((Date.now() - tStart) / 1000).toFixed(1);
             timerEl.textContent = '⏱️ ' + sec + 's';
@@ -5478,11 +5689,11 @@ function crash30DayView(dayNum) {
           if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
           const elapsed = Math.round(((Date.now() - tStart) / 100)) / 10;
           speakBtn.disabled = false;
-          speakBtn.textContent = '🔄 Phản xạ lại';
+          speakBtn.textContent = uiTr('🔄 Phản xạ lại');
           if (said) {
             const al = align('en', rf.en, said);
             rfResults[idx] = { said: said, score: al.score, sec: elapsed };
-            timerEl.textContent = '⚡ ' + elapsed + 's · Khớp ' + al.score + '%';
+            timerEl.textContent = uiTr('⚡ ' + elapsed + 's · Khớp ' + al.score + '%');
             statusEl.replaceChildren(
               h('div', { class: 'words', lang: 'en', style: { justifyContent: 'flex-start', fontSize: '.98rem' } },
                 al.units.map((w, wi) => h('span', { class: al.hit[wi] ? 'hit' : 'miss' }, w))
@@ -5794,7 +6005,7 @@ function dictView() {
   mount(h('div', { class: 'stack-lg', style: { gap: '10px' } },
     h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
       h('button', { type: 'button', class: 'ghost mini', onclick: () => { setTabs(true); go('review'); } }, '← Từ vựng'),
-      h('span', { class: 'chip good small' }, isOffline ? '⚡ Đang Offline · Sẵn sàng' : '📖 Từ điển Trung Offline')
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, h('span', { class: 'chip good small' }, isOffline ? '⚡ Đang Offline · Sẵn sàng' : '📖 Từ điển Trung Offline'), uiLangBtn())
     ),
     h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
       h('input', Object.assign({
@@ -6068,7 +6279,7 @@ function openOnboardingModal(force = false) {
           st.step === 2 ? 'Kiểm tra trình độ HSK' : 'Lộ trình gợi ý'
         )
       ),
-      h('button', { class: 'ghost mini', onclick: closeModal, 'aria-label': 'Đóng' }, '✕')
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, uiLangBtn(), h('button', { class: 'ghost mini', onclick: closeModal, 'aria-label': 'Đóng' }, '✕'))
     );
     card.appendChild(header);
 
@@ -6228,6 +6439,7 @@ function practiceTabView() {
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('h1', { style: { margin: 0 } }, 'Luyện tập'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'practice' }),
         langSwitch()
       )
@@ -6784,6 +6996,7 @@ function homeView(opts = {}) {
         ob && ob.done ? h('span', { class: 'chip level ' + (ob.level || 'hsk1') }, (ob.level || 'hsk1').toUpperCase().replace('HSK', 'HSK ')) : null
       ),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
+        uiLangBtn(),
         feedbackBtn(),
         langSwitch()
       )
@@ -10866,7 +11079,7 @@ function ieltsTipBox(title, items, fullModalTab) {
     onclick: () => {
       open = !open;
       content.style.display = open ? 'flex' : 'none';
-      toggleBtn.textContent = open ? 'Thu gọn ▴' : 'Xem mẹo ▾';
+      toggleBtn.textContent = uiTr(open ? 'Thu gọn ▴' : 'Xem mẹo ▾');
     }
   }, 'Xem mẹo ▾');
 
@@ -11430,6 +11643,7 @@ function ieltsTabView() {
     h('div', { class: 'row between', style: { alignItems: 'center', gap: '8px' } },
       h('p', { class: 'label', style: { margin: 0, whiteSpace: 'nowrap' } }, 'IELTS (2022–2026)'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'ielts', topicId: t.id, topicTitle: t.sub || t.title }),
         langSwitch()
       )
@@ -11528,20 +11742,20 @@ function renderIeltsListening(t, data) {
 
   audioPlayer.addEventListener('play', () => {
     isPlaying = true;
-    playBtn.textContent = '⏸ Tạm dừng';
-    statusText.textContent = 'Đang phát bài nghe IELTS…';
+    playBtn.textContent = uiTr('⏸ Tạm dừng');
+    statusText.textContent = uiTr('Đang phát bài nghe IELTS…');
   });
   audioPlayer.addEventListener('pause', () => {
     isPlaying = false;
-    playBtn.textContent = '▶ Nghe bài nói';
+    playBtn.textContent = uiTr('▶ Nghe bài nói');
     if (audioPlayer.currentTime > 0 && !audioPlayer.ended) {
-      statusText.textContent = 'Đã tạm dừng';
+      statusText.textContent = uiTr('Đã tạm dừng');
     }
   });
   audioPlayer.addEventListener('ended', () => {
     isPlaying = false;
-    playBtn.textContent = '▶ Nghe bài nói';
-    statusText.textContent = 'Đã nghe xong ✓';
+    playBtn.textContent = uiTr('▶ Nghe bài nói');
+    statusText.textContent = uiTr('Đã nghe xong ✓');
   });
 
   const replayBtn = h('button', { class: 'ghost mini', onclick: () => {
@@ -11556,7 +11770,7 @@ function renderIeltsListening(t, data) {
   const speedBtn = h('button', { class: 'ghost mini', onclick: () => {
     slowSpeed = !slowSpeed;
     audioPlayer.playbackRate = slowSpeed ? 0.8 : 1.0;
-    speedBtn.textContent = slowSpeed ? 'Tốc độ: 0.8x (Chậm)' : 'Tốc độ: 1.0x (Chuẩn)';
+    speedBtn.textContent = uiTr(slowSpeed ? 'Tốc độ: 0.8x (Chậm)' : 'Tốc độ: 1.0x (Chuẩn)');
   } }, 'Tốc độ: 1.0x (Chuẩn)');
 
   const transcriptBox = h('div', {
@@ -11581,7 +11795,7 @@ function renderIeltsListening(t, data) {
   const transcriptToggleBtn = h('button', { class: 'ghost mini', onclick: () => {
     showTranscript = !showTranscript;
     transcriptBox.style.display = showTranscript ? 'flex' : 'none';
-    transcriptToggleBtn.textContent = showTranscript ? 'Ẩn Transcript ▴' : '📜 Xem Transcript & Nghe từng câu ▾';
+    transcriptToggleBtn.textContent = uiTr(showTranscript ? 'Ẩn Transcript ▴' : '📜 Xem Transcript & Nghe từng câu ▾');
   } }, '📜 Xem Transcript & Nghe từng câu ▾');
 
   // Question 1: Multiple Choice
@@ -11720,20 +11934,20 @@ function createIeltsSpeechRecorder(promptText, sampleAnswer, onFinished) {
     isRecording = true;
     box.className = 'ielts-speak-recorder recording stack';
     recordBtn.className = 'accent mini';
-    recordBtn.textContent = '⏹ Dừng ghi âm';
+    recordBtn.textContent = uiTr('⏹ Dừng ghi âm');
     timerBadge.style.display = 'inline-block';
-    statusLabel.textContent = 'Đang ghi âm... Hãy nói to và rõ câu trả lời vào micro:';
+    statusLabel.textContent = uiTr('Đang ghi âm... Hãy nói to và rõ câu trả lời vào micro:');
     transcriptEl.style.display = 'block';
-    transcriptEl.textContent = 'Đang nhận diện giọng nói...';
+    transcriptEl.textContent = uiTr('Đang nhận diện giọng nói...');
     audioPlayerWrap.style.display = 'none';
 
     seconds = 0;
-    timerBadge.textContent = '● Đang ghi âm: 00:00';
+    timerBadge.textContent = uiTr('● Đang ghi âm: 00:00');
     timerInterval = setInterval(() => {
       seconds++;
       const m = String(Math.floor(seconds / 60)).padStart(2, '0');
       const s = String(seconds % 60).padStart(2, '0');
-      timerBadge.textContent = '● Đang ghi âm: ' + m + ':' + s;
+      timerBadge.textContent = uiTr('● Đang ghi âm: ' + m + ':' + s);
     }, 1000);
 
     // Thu âm bằng MediaRecorder nếu trình duyệt hỗ trợ
@@ -11782,7 +11996,7 @@ function createIeltsSpeechRecorder(promptText, sampleAnswer, onFinished) {
           )
         );
       } else if (!recognizedText) {
-        transcriptEl.textContent = 'Đã hoàn thành lượt nói. Bạn có thể nghe lại audio bên dưới!';
+        transcriptEl.textContent = uiTr('Đã hoàn thành lượt nói. Bạn có thể nghe lại audio bên dưới!');
       }
       if (onFinished) onFinished(said);
     }).catch(() => {});
@@ -11796,9 +12010,9 @@ function createIeltsSpeechRecorder(promptText, sampleAnswer, onFinished) {
     }
     box.className = 'ielts-speak-recorder stack';
     recordBtn.className = 'ghost mini';
-    recordBtn.textContent = '🔄 Ghi âm lại';
+    recordBtn.textContent = uiTr('🔄 Ghi âm lại');
     timerBadge.style.display = 'none';
-    statusLabel.textContent = 'Đã hoàn thành lượt ghi âm!';
+    statusLabel.textContent = uiTr('Đã hoàn thành lượt ghi âm!');
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       try { mediaRecorder.stop(); } catch (e) {}
@@ -11853,7 +12067,7 @@ function renderIeltsSpeaking(t, data) {
             const toggleModelBtn = h('button', { class: 'ghost mini', onclick: () => {
               showModel = !showModel;
               modelBox.style.display = showModel ? 'block' : 'none';
-              toggleModelBtn.textContent = showModel ? 'Ẩn câu trả lời mẫu' : '💡 Xem câu trả lời mẫu Band 8.0+';
+              toggleModelBtn.textContent = uiTr(showModel ? 'Ẩn câu trả lời mẫu' : '💡 Xem câu trả lời mẫu Band 8.0+');
             } }, '💡 Xem câu trả lời mẫu Band 8.0+');
 
             const recBox = createIeltsSpeechRecorder(p.q, p.sa);
@@ -11892,7 +12106,7 @@ function renderIeltsSpeaking(t, data) {
         clearInterval(timerInterval);
         secondsLeft = 60;
         timerType = 'prep';
-        timerLabel.textContent = 'Đang đếm ngược 1 phút chuẩn bị…';
+        timerLabel.textContent = uiTr('Đang đếm ngược 1 phút chuẩn bị…');
         timerInterval = setInterval(() => {
           secondsLeft--;
           const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
@@ -11900,7 +12114,7 @@ function renderIeltsSpeaking(t, data) {
           timerNum.textContent = m + ':' + s;
           if (secondsLeft <= 0) {
             clearInterval(timerInterval);
-            timerLabel.textContent = 'Hết giờ chuẩn bị! Hãy bắt đầu nói 2 phút.';
+            timerLabel.textContent = uiTr('Hết giờ chuẩn bị! Hãy bắt đầu nói 2 phút.');
             toast('🔔 Hết 1 phút chuẩn bị! Bắt đầu nói.');
           }
         }, 1000);
@@ -11910,7 +12124,7 @@ function renderIeltsSpeaking(t, data) {
         clearInterval(timerInterval);
         secondsLeft = 120;
         timerType = 'speak';
-        timerLabel.textContent = 'Đang đếm ngược 2 phút nói độc thoại…';
+        timerLabel.textContent = uiTr('Đang đếm ngược 2 phút nói độc thoại…');
         timerInterval = setInterval(() => {
           secondsLeft--;
           const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
@@ -11918,7 +12132,7 @@ function renderIeltsSpeaking(t, data) {
           timerNum.textContent = m + ':' + s;
           if (secondsLeft <= 0) {
             clearInterval(timerInterval);
-            timerLabel.textContent = 'Hết 2 phút nói! Hoàn thành phần Part 2.';
+            timerLabel.textContent = uiTr('Hết 2 phút nói! Hoàn thành phần Part 2.');
             toast('🎉 Hoàn thành 2 phút nói độc thoại!');
           }
         }, 1000);
@@ -11934,7 +12148,7 @@ function renderIeltsSpeaking(t, data) {
       const toggleModelP2Btn = h('button', { class: 'ghost mini', onclick: () => {
         showModelP2 = !showModelP2;
         modelP2Box.style.display = showModelP2 ? 'block' : 'none';
-        toggleModelP2Btn.textContent = showModelP2 ? 'Ẩn bài mẫu độc thoại' : '💡 Xem bài nói mẫu Band 8.5';
+        toggleModelP2Btn.textContent = uiTr(showModelP2 ? 'Ẩn bài mẫu độc thoại' : '💡 Xem bài nói mẫu Band 8.5');
       } }, '💡 Xem bài nói mẫu Band 8.5');
 
       const cueRecorder = createIeltsSpeechRecorder(spk.part2.title, spk.part2.modelAnswer);
@@ -12174,10 +12388,10 @@ function renderIeltsWriting(t, data) {
       const count = words.length;
       if (count >= minWords) {
         wordCountBadge.className = 'ielts-word-counter good';
-        wordCountBadge.textContent = '✓ ' + count + ' / ' + minWords + ' từ (Đạt yêu cầu)';
+        wordCountBadge.textContent = uiTr('✓ ' + count + ' / ' + minWords + ' từ (Đạt yêu cầu)');
       } else {
         wordCountBadge.className = 'ielts-word-counter warn';
-        wordCountBadge.textContent = count + ' / ' + minWords + ' từ (Chưa đủ ' + minWords + ' từ)';
+        wordCountBadge.textContent = uiTr(count + ' / ' + minWords + ' từ (Chưa đủ ' + minWords + ' từ)');
       }
     }
 
@@ -12202,7 +12416,7 @@ function renderIeltsWriting(t, data) {
     const toggleModelBtn = h('button', { class: 'ghost mini', onclick: () => {
       showModel = !showModel;
       modelBox.style.display = showModel ? 'block' : 'none';
-      toggleModelBtn.textContent = showModel ? 'Ẩn bài mẫu' : '💡 Xem bài mẫu Band 8.5';
+      toggleModelBtn.textContent = uiTr(showModel ? 'Ẩn bài mẫu' : '💡 Xem bài mẫu Band 8.5');
     } }, '💡 Xem bài mẫu Band 8.5');
 
     container.replaceChildren(
@@ -13065,22 +13279,22 @@ function buildListenDialoguePanel(code, track, opts = {}) {
         try { ACTIVE_DLG_AUDIO.pause(); } catch (e) {}
       }
       ACTIVE_DLG_AUDIO = audioPlayer;
-      playBtn.textContent = '⏸ Tạm dừng';
-      statusText.textContent = 'Đang phát hội thoại ' + (track.level || 'B1+') + '…';
+      playBtn.textContent = uiTr('⏸ Tạm dừng');
+      statusText.textContent = uiTr('Đang phát hội thoại ' + (track.level || 'B1+') + '…');
     });
     audioPlayer.addEventListener('pause', () => {
-      playBtn.textContent = audioFailed ? '▶ Nghe bằng giọng dự phòng' : '▶ Nghe đoạn hội thoại';
-      if (audioPlayer.currentTime > 0 && !audioPlayer.ended) statusText.textContent = 'Đã tạm dừng';
+      playBtn.textContent = uiTr(audioFailed ? '▶ Nghe bằng giọng dự phòng' : '▶ Nghe đoạn hội thoại');
+      if (audioPlayer.currentTime > 0 && !audioPlayer.ended) statusText.textContent = uiTr('Đã tạm dừng');
     });
     audioPlayer.addEventListener('ended', () => {
       if (ACTIVE_DLG_AUDIO === audioPlayer) ACTIVE_DLG_AUDIO = null;
-      playBtn.textContent = '▶ Nghe đoạn hội thoại';
-      statusText.textContent = 'Đã phát hết hội thoại ✓';
+      playBtn.textContent = uiTr('▶ Nghe đoạn hội thoại');
+      statusText.textContent = uiTr('Đã phát hết hội thoại ✓');
     });
     audioPlayer.addEventListener('error', () => {
       audioFailed = true;
-      playBtn.textContent = '▶ Nghe bằng giọng dự phòng';
-      statusText.textContent = 'Không tải được MP3 · Dùng giọng đọc dự phòng';
+      playBtn.textContent = uiTr('▶ Nghe bằng giọng dự phòng');
+      statusText.textContent = uiTr('Không tải được MP3 · Dùng giọng đọc dự phòng');
     });
   }
 
@@ -13111,7 +13325,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
       const idx = speedRates.indexOf(rate);
       rate = speedRates[(idx + 1) % speedRates.length];
       audioPlayer.playbackRate = rate;
-      speedBtn.textContent = 'Tốc độ: ' + rate + 'x';
+      speedBtn.textContent = uiTr('Tốc độ: ' + rate + 'x');
     }
   }, 'Tốc độ: 1x');
 
@@ -13124,7 +13338,7 @@ function buildListenDialoguePanel(code, track, opts = {}) {
       onclick: () => {
         showScript = !showScript;
         transcriptBox.style.display = showScript ? 'flex' : 'none';
-        transcriptToggle.textContent = showScript ? '🙈 Ẩn lời thoại & bản dịch' : '👁️ Hiện lời thoại & bản dịch';
+        transcriptToggle.textContent = uiTr(showScript ? '🙈 Ẩn lời thoại & bản dịch' : '👁️ Hiện lời thoại & bản dịch');
       }
     }, showScript ? '🙈 Ẩn lời thoại & bản dịch' : '👁️ Hiện lời thoại & bản dịch');
   }
@@ -13161,7 +13375,7 @@ function listenDlgFeedback(code, ex, r) {
     onclick: () => {
       showScript = !showScript;
       scriptBox.style.display = showScript ? 'flex' : 'none';
-      toggleBtn.textContent = showScript ? '🔼 Ẩn lời thoại hội thoại' : '📄 Xem lời thoại & bản dịch để đối chiếu';
+      toggleBtn.textContent = uiTr(showScript ? '🔼 Ẩn lời thoại hội thoại' : '📄 Xem lời thoại & bản dịch để đối chiếu');
     }
   }, '📄 Xem lời thoại & bản dịch để đối chiếu') : null;
 
@@ -13780,7 +13994,7 @@ async function playLinesSeq(code, lines, btn, rowEls = []) {
     btn.dataset.seq = String((+btn.dataset.seq || 0) + 1);
     stopSay();
     rowEls.forEach((r) => { if (r) r.style.background = ''; });
-    btn.textContent = '🔊 Nghe cả đoạn';
+    btn.textContent = uiTr('🔊 Nghe cả đoạn');
     return;
   }
   const playable = (lines || []).map((ln, idx) => ({ ln, idx, txt: (ln && (ln.t || ln.text)) || '' })).filter((x) => x.txt);
@@ -13803,7 +14017,7 @@ async function playLinesSeq(code, lines, btn, rowEls = []) {
       if (btn.isConnected === false || btn.dataset.seq !== mySeq || btn.dataset.playing !== '1') break;
       clearHi();
       if (rowEls[idx]) rowEls[idx].style.background = 'rgba(45,212,191,.10)';
-      btn.textContent = '⏹️ Dừng (' + (k + 1) + '/' + playable.length + ')';
+      btn.textContent = uiTr('⏹️ Dừng (' + (k + 1) + '/' + playable.length + ')');
       const ok = await sayWait(code, txt, false);
       if (!ok || btn.isConnected === false || btn.dataset.seq !== mySeq || btn.dataset.playing !== '1') break;
     }
@@ -13811,7 +14025,7 @@ async function playLinesSeq(code, lines, btn, rowEls = []) {
     clearHi();
     if (btn.dataset.seq === mySeq) {
       btn.dataset.playing = '0';
-      btn.textContent = '🔊 Nghe cả đoạn';
+      btn.textContent = uiTr('🔊 Nghe cả đoạn');
     }
   }
 }
@@ -13848,8 +14062,8 @@ function renderDialogueCard(code, title, src, lines, opts = {}) {
   const syncVisibility = () => {
     pyNodes.forEach((n) => { n.style.display = showPy ? 'block' : 'none'; });
     viNodes.forEach((n) => { n.style.display = showVi ? 'block' : 'none'; });
-    if (pyBtn) pyBtn.textContent = showPy ? ('Ẩn ' + pyLabel) : ('Hiện ' + pyLabel);
-    if (viBtn) viBtn.textContent = showVi ? 'Ẩn nghĩa' : 'Hiện nghĩa';
+    if (pyBtn) pyBtn.textContent = uiTr(showPy ? ('Ẩn ' + pyLabel) : ('Hiện ' + pyLabel));
+    if (viBtn) viBtn.textContent = uiTr(showVi ? 'Ẩn nghĩa' : 'Hiện nghĩa');
   };
   if (pyBtn) pyBtn.onclick = () => { showPy = !showPy; syncVisibility(); };
   if (viBtn) viBtn.onclick = () => { showVi = !showVi; syncVisibility(); };
@@ -14059,7 +14273,7 @@ function createTwoPartFill(code, fillObj, opts) {
     const p2Badge = p2Slot.querySelector('.fill-stage-badge');
     if (p2Badge) {
       p2Badge.classList.add('done');
-      p2Badge.textContent = (ok2 === inputs2.length ? '✓ ' : '') + 'Phần 2 (Tự điền): ' + ok2 + '/' + inputs2.length;
+      p2Badge.textContent = uiTr((ok2 === inputs2.length ? '✓ ' : '') + 'Phần 2 (Tự điền): ' + ok2 + '/' + inputs2.length);
     }
     notify();
     return { ok: ok2, total: inputs2.length, ok1 };
@@ -14253,7 +14467,7 @@ function lessonView(t, i, opts = null) {
 
     if (ex.type === 'intro') {
       body = itemCard(code, ex.v, ex.tip, () => { submit(); });
-      btn.textContent = 'Tiếp tục'; ready = () => true;
+      btn.textContent = uiTr('Tiếp tục'); ready = () => true;
       sayAfter(code, ex.v.w, 300);
     } else if (ex.type === 'meaning' || ex.type === 'listen' || ex.type === 'reverse') {
       const isMeaning = ex.type === 'meaning';
@@ -14272,7 +14486,7 @@ function lessonView(t, i, opts = null) {
         h('div', { class: 'big', lang: LANGS[code].lang }, ex.c), h('p', { class: 'small muted center', lang: LANGS[code].lang }, 'trong từ ' + plain(ex.v.w) + ' (' + ex.v.m + ')'), c.el);
       gradeFn = () => ({ correct: c.sel() === ex.correct, expected: ex.correct.hv, note: ex.m ? ('Âm Hán Việt: ' + ex.correct.hv + ' (nghĩa: ' + ex.m + ')') : '' });
     } else if (ex.type === 'kintro') {
-      const k = ex.k; btn.textContent = 'Tiếp tục'; ready = () => true;
+      const k = ex.k; btn.textContent = uiTr('Tiếp tục'); ready = () => true;
       body = h('div', { class: 'panel stack center' }, h('p', { class: 'label' }, 'Kanji mới'), h('div', { class: 'big', lang: 'ja' }, k.k),
         h('p', {}, h('b', {}, k.hv)), h('p', { class: 'small', lang: 'ja' }, 'On: ' + k.on + ' · Kun: ' + k.kun),
         ...(k.ex || []).slice(0, 3).map((e) => h('p', { class: 'small', lang: 'ja' }, ruby(e[0]), ' · ', h('span', { class: 'muted' }, e[1]))));
@@ -14356,7 +14570,7 @@ function lessonView(t, i, opts = null) {
           e.preventDefault();
           showHint = !showHint;
           hintEl.style.display = showHint ? 'block' : 'none';
-          hintBtn.textContent = (showHint ? 'Ẩn gợi ý ' : '💡 Gợi ý ') + hintLabel;
+          hintBtn.textContent = uiTr((showHint ? 'Ẩn gợi ý ' : '💡 Gợi ý ') + hintLabel);
         }
       }, '💡 Gợi ý ' + hintLabel) : null;
       const transText = ex.trans || (ex.v && ex.v.exm) || (ex.s && (ex.s.m || ex.s.trans)) || '';
@@ -14415,7 +14629,7 @@ function lessonView(t, i, opts = null) {
 
       const toggleOutlineBtn = h('button', { class: 'ghost mini', onclick: () => {
         blindMode = !blindMode;
-        toggleOutlineBtn.textContent = blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ';
+        toggleOutlineBtn.textContent = uiTr(blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ');
         startQuiz(blindMode);
       } }, 'Hiện nét mờ');
 
@@ -14423,15 +14637,15 @@ function lessonView(t, i, opts = null) {
         if (!writer) return;
         isAnimating = false;
         blindMode = blind;
-        toggleOutlineBtn.textContent = blind ? 'Hiện nét mờ' : 'Ẩn nét mờ';
+        toggleOutlineBtn.textContent = uiTr(blind ? 'Hiện nét mờ' : 'Ẩn nét mờ');
         mistakes = 0;
         blind ? writer.hideOutline() : writer.showOutline();
         stepLabel.className = 'chip ' + (blind ? '' : 'good');
-        stepLabel.textContent = blind ? 'Tập viết (không có nét mờ)' : 'Tập viết (có nét mờ)';
+        stepLabel.textContent = uiTr(blind ? 'Tập viết (không có nét mờ)' : 'Tập viết (có nét mờ)');
         const strokeInfo = totalStrokes ? ' (' + totalStrokes + ' nét)' : '';
-        info.textContent = blind
+        info.textContent = uiTr(blind
           ? 'Tập viết không có nét mờ' + strokeInfo + ': Nhớ chữ rồi viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem lại.'
-          : 'Đồ theo nét mờ' + strokeInfo + ': Viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem cách viết.';
+          : 'Đồ theo nét mờ' + strokeInfo + ': Viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem cách viết.');
         writer.quiz({
           showHintAfterMisses: 2,
           onMistake: (s) => {
@@ -14445,7 +14659,7 @@ function lessonView(t, i, opts = null) {
           onCorrectStroke: (s) => {
             const cur = (s && s.strokeNum != null) ? s.strokeNum + 1 : '?';
             stepLabel.className = 'chip good';
-            stepLabel.textContent = 'Đúng nét ' + cur + (totalStrokes ? ' / ' + totalStrokes : '');
+            stepLabel.textContent = uiTr('Đúng nét ' + cur + (totalStrokes ? ' / ' + totalStrokes : ''));
             info.replaceChildren(
               h('span', { class: 'chip good', style: { fontSize: '.85rem', padding: '2px 8px', marginRight: '6px' } }, 'Nét ' + cur + (totalStrokes ? '/' + totalStrokes : '')),
               h('span', { class: 'small muted' }, s.strokesRemaining > 0 ? 'Đúng rồi! Còn ' + s.strokesRemaining + ' nét.' : 'Đã hoàn thành nét cuối!')
@@ -14455,8 +14669,8 @@ function lessonView(t, i, opts = null) {
             completed = true;
             mistakes = s.totalMistakes;
             stepLabel.className = 'chip good';
-            stepLabel.textContent = 'Hoàn thành ' + (totalStrokes ? totalStrokes + ' nét' : '!');
-            info.textContent = (s.totalMistakes === 0 ? 'Hoàn hảo! Viết đúng cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét không sai lần nào.' : 'Xong cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét! Sai ' + mistakes + ' lần.');
+            stepLabel.textContent = uiTr('Hoàn thành ' + (totalStrokes ? totalStrokes + ' nét' : '!'));
+            info.textContent = uiTr((s.totalMistakes === 0 ? 'Hoàn hảo! Viết đúng cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét không sai lần nào.' : 'Xong cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét! Sai ' + mistakes + ' lần.'));
             update();
             submit();
           }
@@ -14469,8 +14683,8 @@ function lessonView(t, i, opts = null) {
         isAnimating = true;
         writer.showOutline();
         stepLabel.className = 'chip good';
-        stepLabel.textContent = 'Nét 1' + (totalStrokes ? ' / ' + totalStrokes : '');
-        info.textContent = 'Đang chạy thứ tự nét: Nét 1' + (totalStrokes ? '/' + totalStrokes : '') + '...';
+        stepLabel.textContent = uiTr('Nét 1' + (totalStrokes ? ' / ' + totalStrokes : ''));
+        info.textContent = uiTr('Đang chạy thứ tự nét: Nét 1' + (totalStrokes ? '/' + totalStrokes : '') + '...');
 
         if (writer._renderState) {
           const orig = writer._renderState._onStateChange;
@@ -14492,8 +14706,8 @@ function lessonView(t, i, opts = null) {
                   lastS = cur;
                   const num = cur + 1;
                   stepLabel.className = 'chip good';
-                  stepLabel.textContent = 'Nét ' + num + (totalStrokes ? ' / ' + totalStrokes : '');
-                  info.textContent = 'Đang chạy nét ' + num + (totalStrokes ? '/' + totalStrokes : '') + '...';
+                  stepLabel.textContent = uiTr('Nét ' + num + (totalStrokes ? ' / ' + totalStrokes : ''));
+                  info.textContent = uiTr('Đang chạy nét ' + num + (totalStrokes ? '/' + totalStrokes : '') + '...');
                 }
               }
             }
@@ -14505,8 +14719,8 @@ function lessonView(t, i, opts = null) {
             if (r && r.canceled) return;
             isAnimating = false;
             stepLabel.className = 'chip good';
-            stepLabel.textContent = 'Đã chạy xong ' + (totalStrokes ? totalStrokes + ' nét' : '!');
-            info.textContent = 'Đã xem xong thứ tự nét. Hãy tự viết lại vào ô (không có nét mờ)!';
+            stepLabel.textContent = uiTr('Đã chạy xong ' + (totalStrokes ? totalStrokes + ' nét' : '!'));
+            info.textContent = uiTr('Đã xem xong thứ tự nét. Hãy tự viết lại vào ô (không có nét mờ)!');
             setTimeout(() => {
               startQuiz(true);
             }, 1000);
@@ -14533,16 +14747,16 @@ function lessonView(t, i, opts = null) {
         wbox, strokeStepBadge, info,
         h('div', { class: 'listen' }, btnStroke, h('button', { onclick: () => startQuiz(true) }, 'Viết lại'), toggleOutlineBtn)
       );
-      btn.textContent = 'Bỏ qua'; ready = () => true;
+      btn.textContent = uiTr('Bỏ qua'); ready = () => true;
 
       setTimeout(async () => {
         const data = await loadCharStrokeData(code, ex.ch);
-        if (!data || !window.HanziWriter) { info.textContent = window.HanziWriter ? 'Chưa có dữ liệu nét cho chữ này.' : 'Không tải được công cụ viết. Kiểm tra mạng rồi mở lại.'; return; }
+        if (!data || !window.HanziWriter) { info.textContent = uiTr(window.HanziWriter ? 'Chưa có dữ liệu nét cho chữ này.' : 'Không tải được công cụ viết. Kiểm tra mạng rồi mở lại.'); return; }
         totalStrokes = (data.strokes && data.strokes.length) || 0;
         if (totalStrokes) {
-          strokeChip.textContent = totalStrokes + ' nét';
+          strokeChip.textContent = uiTr(totalStrokes + ' nét');
           strokeChip.hidden = false;
-          btnStroke.textContent = 'Xem thứ tự nét (' + totalStrokes + ' nét)';
+          btnStroke.textContent = uiTr('Xem thứ tự nét (' + totalStrokes + ' nét)');
         }
         const size = wbox.clientWidth || 260;
         writer = HanziWriter.create(wbox, ex.ch, {
@@ -14599,7 +14813,7 @@ function lessonView(t, i, opts = null) {
         );
 
         resp = { said: lastSaid, align: bestAlign, score: bestScore, attempts };
-        btn.textContent = bestScore >= 80 ? 'Tiếp tục ✓' : 'Tiếp tục';
+        btn.textContent = uiTr(bestScore >= 80 ? 'Tiếp tục ✓' : 'Tiếp tục');
       };
 
       const drawSpeak = () => status.replaceChildren(selfMode
@@ -14619,7 +14833,7 @@ function lessonView(t, i, opts = null) {
                 b.classList.add('live');
                 const said = await tryListen(code, (txt) => { hint.textContent = txt; });
                 b.classList.remove('live');
-                hint.textContent = 'Bấm micro để nói lại và nâng cao điểm';
+                hint.textContent = uiTr('Bấm micro để nói lại và nâng cao điểm');
                 if (said) {
                   const a = align(code, ex.text, said);
                   updateSpeakFeedback(a.score, said, a);
@@ -14634,14 +14848,14 @@ function lessonView(t, i, opts = null) {
       body = h('div', { class: 'stack center' }, h('p', { class: 'label' }, ex.scene || '🎙️ Kỹ năng Nói · Micro AI phát âm theo mẫu'),
         wordsBox,
         readingLine && readingLine !== plain(ex.text) && h('p', { class: 'read', lang: LANGS[code].lang }, readingLine), ex.m && h('p', {}, ex.m), listenBtns(code, ex.text), status, speakResult);
-      btn.hidden = false; btn.disabled = false; btn.textContent = 'Tiếp tục'; ready = () => true; after = () => status.replaceChildren();
+      btn.hidden = false; btn.disabled = false; btn.textContent = uiTr('Tiếp tục'); ready = () => true; after = () => status.replaceChildren();
       gradeFn = () => {
         if (!resp || resp.self) return { correct: true, self: true };
         return { correct: bestScore >= 80, score: bestScore, align: bestAlign, said: lastSaid };
       };
     } else if (ex.type === 'gintro') {
       const g = ex.g, langAttr = LANGS[code].lang;
-      btn.textContent = 'Tiếp tục'; ready = () => true;
+      btn.textContent = uiTr('Tiếp tục'); ready = () => true;
       body = h('div', { class: 'panel gram stack', style: { gap: '10px' } },
         h('div', { class: 'row between', style: { alignItems: 'center', gap: '6px', flexWrap: 'wrap' } },
           h('p', { class: 'label', style: { margin: 0 } }, 'Ngữ pháp bài học'),
@@ -14671,7 +14885,7 @@ function lessonView(t, i, opts = null) {
       const noteText = hasPy
         ? ('Bấm 🔊 Nghe cả đoạn để nghe toàn bài rồi đọc to theo luyện ngữ điệu. Có thể bấm “Ẩn ' + pyName + '” để tự đọc mặt chữ.')
         : 'Bấm 🔊 Nghe cả đoạn để nghe toàn hội thoại rồi đọc to theo luyện ngữ điệu.';
-      btn.textContent = 'Đã luyện đọc ➔'; ready = () => true;
+      btn.textContent = uiTr('Đã luyện đọc ➔'); ready = () => true;
       body = h('div', { class: 'stack', style: { gap: '10px' } },
         h('p', { class: 'label' }, readLabel),
         renderDialogueCard(code, sc.title || 'Hội thoại tình huống', '', sc.lines || [], { defaultShowPy: true, defaultShowVi: false }),
@@ -14777,7 +14991,7 @@ function lessonView(t, i, opts = null) {
       if (ex.type === 'order') sayAfter(code, ex.text, 250);
       if (ex.type === 'quiz' && (code === 'en' || ((code === 'zh' || code === 'ja') && /[\u4e00-\u9fff\u3040-\u30ff]/.test(((ex.q.o || ex.q.opts || [])[ex.q.a]) || '')))) { const optTarget = (ex.q.o || ex.q.opts || [])[ex.q.a]; if (optTarget) sayAfter(code, optTarget, 250); }
       if (ex.type === 'gquiz' && ex.q && ex.q.e && ex.q.e[0]) sayAfter(code, ex.q.e[0], 250);
-      btn.hidden = false; btn.disabled = false; btn.textContent = 'Tiếp theo ➔'; btn.onclick = step; btn.focus();
+      btn.hidden = false; btn.disabled = false; btn.textContent = uiTr('Tiếp theo ➔'); btn.onclick = step; btn.focus();
     }
     btn.addEventListener('click', submit);
     const total = done + queue.length + 1;
@@ -15210,6 +15424,7 @@ function reviewView(forceExtra = false) {
     h('div', { class: 'row between wrap', style: { alignItems: 'center', gap: '6px' } },
       h('h1', { style: { margin: 0, fontSize: '1.35rem' } }, isReviewing ? 'Từ vựng · Ôn FSRS' : 'Từ vựng'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center', flexShrink: 0 } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'review_vocab' }),
         langSwitch()
       )
@@ -15571,7 +15786,7 @@ function reviewView(forceExtra = false) {
         onclick: () => {
           if (!writer) return;
           blindMode = !blindMode;
-          toggleOutlineBtn.textContent = blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ';
+          toggleOutlineBtn.textContent = uiTr(blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ');
           blindMode ? writer.hideOutline() : writer.showOutline();
         }
       }, 'Ẩn nét mờ');
@@ -15588,7 +15803,7 @@ function reviewView(forceExtra = false) {
                 showHintAfterMisses: 2,
                 onComplete: (res) => {
                   const ok = res.totalMistakes <= 3;
-                  info.textContent = ok ? 'Hoàn thành tốt! (Sai ' + res.totalMistakes + ' lần)' : 'Hoàn thành nhưng sai ' + res.totalMistakes + ' lần.';
+                  info.textContent = uiTr(ok ? 'Hoàn thành tốt! (Sai ' + res.totalMistakes + ' lần)' : 'Hoàn thành nhưng sai ' + res.totalMistakes + ' lần.');
                   finishWrite(ok ? (res.totalMistakes === 0 ? 4 : 3) : 1, ok);
                 }
               });
@@ -15600,7 +15815,7 @@ function reviewView(forceExtra = false) {
       const loadCharIntoBox = async (ch) => {
         activeCh = ch;
         wbox.replaceChildren();
-        info.textContent = 'Đang tải nét chữ…';
+        info.textContent = uiTr('Đang tải nét chữ…');
         const data = await loadCharStrokeData(code, ch);
         if (!data || !window.HanziWriter) {
           info.replaceChildren(
@@ -15620,12 +15835,12 @@ function reviewView(forceExtra = false) {
           drawingColor: getComputedStyle(document.documentElement).getPropertyValue('--teal').trim() || '#0f5257',
           charDataLoader: (charName, ok) => ok(data)
         });
-        info.textContent = 'Đồ theo nét mờ để nhớ thứ tự nét (bấm “Ẩn nét mờ” để tự viết không gợi ý)';
+        info.textContent = uiTr('Đồ theo nét mờ để nhớ thứ tự nét (bấm “Ẩn nét mờ” để tự viết không gợi ý)');
         writer.quiz({
           showHintAfterMisses: 2,
           onComplete: (res) => {
             const ok = res.totalMistakes <= 3;
-            info.textContent = ok ? 'Hoàn thành tốt! (Sai ' + res.totalMistakes + ' lần)' : 'Hoàn thành nhưng sai ' + res.totalMistakes + ' lần.';
+            info.textContent = uiTr(ok ? 'Hoàn thành tốt! (Sai ' + res.totalMistakes + ' lần)' : 'Hoàn thành nhưng sai ' + res.totalMistakes + ' lần.');
             finishWrite(ok ? (res.totalMistakes === 0 ? 4 : 3) : 1, ok);
           }
         });
@@ -15896,7 +16111,7 @@ function micControl(code, onResult, onSelf, selfLabels) {
             b.classList.add('live');
             const said = await tryListen(code, (txt) => { hint.textContent = txt; });
             b.classList.remove('live');
-            hint.textContent = 'Bấm micro để nói lại và nâng cao điểm số';
+            hint.textContent = uiTr('Bấm micro để nói lại và nâng cao điểm số');
             if (said) { hasSpoken = true; onResult(said); }
             draw();
           } }, icon(ICON.speak)),
@@ -16091,7 +16306,7 @@ function renderLongListenSkillsSection(code, t) {
           answeredCount++;
           if (ok) correctCount++;
           if (q.id) srsRate(sid(code, q.id), ok);
-          scoreBadge.textContent = 'Điểm: ' + correctCount + '/' + qs.length + (answeredCount === qs.length ? ' ✓' : '');
+          scoreBadge.textContent = uiTr('Điểm: ' + correctCount + '/' + qs.length + (answeredCount === qs.length ? ' ✓' : ''));
           scoreBadge.className = answeredCount === qs.length && correctCount === qs.length ? 'chip good' : 'chip';
           fbEl.style.display = 'block';
           fbEl.replaceChildren(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no'), style: { marginTop: 0 } },
@@ -16145,7 +16360,7 @@ function renderListenSkills(code, d) {
   let playSeq = 0;
   let playTimeout = null;
   const resetPlayAllBtn = () => {
-    playAllBtn.textContent = '🔊 Tắm ngôn ngữ · Phát toàn bộ câu bài này (' + vocabsWithEx.length + ' câu)';
+    playAllBtn.textContent = uiTr('🔊 Tắm ngôn ngữ · Phát toàn bộ câu bài này (' + vocabsWithEx.length + ' câu)');
     playAllBtn.classList.remove('accent');
     playAllBtn.classList.add('primary');
   };
@@ -16174,7 +16389,7 @@ function renderListenSkills(code, d) {
         for (let idx = 0; idx < vocabsWithEx.length; idx++) {
           if (!isPlayingAll || playSeq !== mySeq || playAllBtn.isConnected === false) break;
           const v = vocabsWithEx[idx];
-          playAllBtn.textContent = '⏹ Đang phát câu ' + (idx + 1) + '/' + vocabsWithEx.length + ' (Bấm để dừng)';
+          playAllBtn.textContent = uiTr('⏹ Đang phát câu ' + (idx + 1) + '/' + vocabsWithEx.length + ' (Bấm để dừng)');
           const ok = await sayWait(code, v.ex, false);
           if (!ok || !isPlayingAll || playSeq !== mySeq || playAllBtn.isConnected === false) break;
           if (idx < vocabsWithEx.length - 1) {
@@ -16201,7 +16416,7 @@ function renderListenSkills(code, d) {
     style: { fontSize: '.8rem', padding: '6px 12px', flexShrink: 0 },
     onclick: () => {
       hideEnglish = !hideEnglish;
-      toggleTextBtn.textContent = hideEnglish ? '👁️ Hiện chữ tiếng Anh' : '🙈 Ẩn chữ (Nghe chay)';
+      toggleTextBtn.textContent = uiTr(hideEnglish ? '👁️ Hiện chữ tiếng Anh' : '🙈 Ẩn chữ (Nghe chay)');
       const exTexts = document.querySelectorAll('.listen-ex-text');
       exTexts.forEach((el) => {
         el.style.opacity = hideEnglish ? '0' : '1';
@@ -16689,6 +16904,7 @@ function skillsView(tab) {
         h('h1', { style: { margin: 0, fontSize: '1.35rem' } }, 'Kỹ năng')
       ),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: SKILL_TAB, topicId: t.id, topicTitle: t.sub || t.title }),
         langSwitch()
       )
@@ -16759,7 +16975,7 @@ function charView(code, c, list) {
 
   const toggleOutlineBtn = h('button', { class: 'ghost mini', onclick: () => {
     blindMode = !blindMode;
-    toggleOutlineBtn.textContent = blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ';
+    toggleOutlineBtn.textContent = uiTr(blindMode ? 'Hiện nét mờ' : 'Ẩn nét mờ');
     quiz(blindMode);
   } }, 'Hiện nét mờ');
 
@@ -16769,14 +16985,14 @@ function charView(code, c, list) {
     if (!writer) return;
     isAnimating = false;
     blindMode = blind;
-    toggleOutlineBtn.textContent = blind ? 'Hiện nét mờ' : 'Ẩn nét mờ';
+    toggleOutlineBtn.textContent = uiTr(blind ? 'Hiện nét mờ' : 'Ẩn nét mờ');
     blind ? writer.hideOutline() : writer.showOutline();
     stepLabel.className = 'chip ' + (blind ? '' : 'good');
-    stepLabel.textContent = blind ? 'Tập viết (không có nét mờ)' : 'Tập viết (có nét mờ)';
+    stepLabel.textContent = uiTr(blind ? 'Tập viết (không có nét mờ)' : 'Tập viết (có nét mờ)');
     const strokeInfo = totalStrokes ? ' (' + totalStrokes + ' nét)' : '';
-    status.textContent = blind
+    status.textContent = uiTr(blind
       ? 'Tập viết không có nét mờ' + strokeInfo + ': Nhớ chữ rồi viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem lại.'
-      : 'Đồ theo chữ mờ' + strokeInfo + ': Viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem cách viết.';
+      : 'Đồ theo chữ mờ' + strokeInfo + ': Viết từng nét vào ô. Bấm “Xem thứ tự nét” nếu cần xem cách viết.');
     writer.quiz({
       showHintAfterMisses: 2,
       onMistake: (s) => {
@@ -16789,7 +17005,7 @@ function charView(code, c, list) {
       onCorrectStroke: (s) => {
         const cur = (s && s.strokeNum != null) ? s.strokeNum + 1 : '?';
         stepLabel.className = 'chip good';
-        stepLabel.textContent = 'Đúng nét ' + cur + (totalStrokes ? ' / ' + totalStrokes : '');
+        stepLabel.textContent = uiTr('Đúng nét ' + cur + (totalStrokes ? ' / ' + totalStrokes : ''));
         status.replaceChildren(
           h('span', { class: 'chip good', style: { fontSize: '.85rem', padding: '2px 8px', marginRight: '6px' } }, 'Nét ' + cur + (totalStrokes ? '/' + totalStrokes : '')),
           h('span', { class: 'small muted' }, s.strokesRemaining > 0 ? 'Đúng rồi! Còn ' + s.strokesRemaining + ' nét nữa.' : 'Đã hoàn thành nét cuối!')
@@ -16802,8 +17018,8 @@ function charView(code, c, list) {
         addXp(XP_ITEM, code);
         checkAch();
         stepLabel.className = 'chip good';
-        stepLabel.textContent = 'Hoàn thành ' + (totalStrokes ? totalStrokes + ' nét' : '!');
-        status.textContent = (s.totalMistakes === 0 ? 'Hoàn hảo! Viết đúng cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét không sai lần nào.' : 'Xong cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét! Sai ' + s.totalMistakes + ' lần.') + ' Bấm “Viết lại” để thử viết lại.';
+        stepLabel.textContent = uiTr('Hoàn thành ' + (totalStrokes ? totalStrokes + ' nét' : '!'));
+        status.textContent = uiTr((s.totalMistakes === 0 ? 'Hoàn hảo! Viết đúng cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét không sai lần nào.' : 'Xong cả ' + (totalStrokes ? totalStrokes + ' ' : '') + 'nét! Sai ' + s.totalMistakes + ' lần.') + ' Bấm “Viết lại” để thử viết lại.');
       }
     });
   };
@@ -16814,8 +17030,8 @@ function charView(code, c, list) {
     isAnimating = true;
     writer.showOutline();
     stepLabel.className = 'chip good';
-    stepLabel.textContent = 'Nét 1' + (totalStrokes ? ' / ' + totalStrokes : '');
-    status.textContent = 'Đang chạy thứ tự nét: Nét 1' + (totalStrokes ? '/' + totalStrokes : '') + '...';
+    stepLabel.textContent = uiTr('Nét 1' + (totalStrokes ? ' / ' + totalStrokes : ''));
+    status.textContent = uiTr('Đang chạy thứ tự nét: Nét 1' + (totalStrokes ? '/' + totalStrokes : '') + '...');
 
     if (writer._renderState) {
       const orig = writer._renderState._onStateChange;
@@ -16837,8 +17053,8 @@ function charView(code, c, list) {
               lastS = cur;
               const num = cur + 1;
               stepLabel.className = 'chip good';
-              stepLabel.textContent = 'Nét ' + num + (totalStrokes ? ' / ' + totalStrokes : '');
-              status.textContent = 'Đang chạy nét ' + num + (totalStrokes ? '/' + totalStrokes : '') + '...';
+              stepLabel.textContent = uiTr('Nét ' + num + (totalStrokes ? ' / ' + totalStrokes : ''));
+              status.textContent = uiTr('Đang chạy nét ' + num + (totalStrokes ? '/' + totalStrokes : '') + '...');
             }
           }
         }
@@ -16850,8 +17066,8 @@ function charView(code, c, list) {
         if (r && r.canceled) return;
         isAnimating = false;
         stepLabel.className = 'chip good';
-        stepLabel.textContent = 'Đã chạy xong ' + (totalStrokes ? totalStrokes + ' nét' : '!');
-        status.textContent = 'Đã xem xong thứ tự nét. Giờ hãy tự viết lại vào ô (không có nét mờ)!';
+        stepLabel.textContent = uiTr('Đã chạy xong ' + (totalStrokes ? totalStrokes + ' nét' : '!'));
+        status.textContent = uiTr('Đã xem xong thứ tự nét. Giờ hãy tự viết lại vào ô (không có nét mờ)!');
         setTimeout(() => {
           quiz(true);
         }, 1000);
@@ -16901,12 +17117,12 @@ function charView(code, c, list) {
 
   setTimeout(async () => {
     const data = await loadCharStrokeData(code, c);
-    if (!data || !window.HanziWriter) { status.textContent = window.HanziWriter ? 'Chưa có dữ liệu nét cho chữ này.' : 'Không tải được công cụ viết. Kiểm tra mạng rồi mở lại.'; return; }
+    if (!data || !window.HanziWriter) { status.textContent = uiTr(window.HanziWriter ? 'Chưa có dữ liệu nét cho chữ này.' : 'Không tải được công cụ viết. Kiểm tra mạng rồi mở lại.'); return; }
     totalStrokes = (data.strokes && data.strokes.length) || 0;
     if (totalStrokes) {
-      strokeBadge.textContent = totalStrokes + ' nét';
+      strokeBadge.textContent = uiTr(totalStrokes + ' nét');
       strokeBadge.hidden = false;
-      btnStroke.textContent = 'Xem thứ tự nét (' + totalStrokes + ' nét)';
+      btnStroke.textContent = uiTr('Xem thứ tự nét (' + totalStrokes + ' nét)');
       strokeInfoRow.replaceChildren('Số nét: ', h('b', {}, totalStrokes + ' nét'));
       strokeInfoRow.hidden = false;
     }
@@ -16961,7 +17177,7 @@ function fillBlock(t) {
         const r2 = twoPart.completePart2();
         if (r2.ok >= parseInt(S.fill[key] || '0', 10)) {
           S.fill[key] = r2.ok + '/' + r2.total; // lưu kết quả tốt nhất dạng "4/5"
-          bestChip.textContent = 'Tốt nhất ' + S.fill[key];
+          bestChip.textContent = uiTr('Tốt nhất ' + S.fill[key]);
           bestChip.hidden = false;
           save();
         }
@@ -18003,7 +18219,7 @@ function grammarQuizView(levelKey, onlyWrong, customOpts) {
       }
       save();
       next.hidden = false;
-      next.textContent = 'Tiếp theo ➔';
+      next.textContent = uiTr('Tiếp theo ➔');
       fb.replaceChildren(
         h('div', { style: { margin: '0 0 10px 0' } }, next),
         h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') },
@@ -18433,6 +18649,7 @@ function renderEnglishKnowledgeView() {
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('p', { class: 'label', style: { margin: 0 } }, 'Kiến thức Tiếng Anh'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'knowledge_en' }),
         langSwitch()
       )
@@ -18461,7 +18678,7 @@ function renderEnglishKnowledgeView() {
       const anyClosed = [...details].some((d) => !d.open);
       details.forEach((d) => { d.open = anyClosed; });
       const btn = document.getElementById('toggle-guides-btn');
-      if (btn) btn.textContent = anyClosed ? '📁 Thu gọn tất cả' : '📖 Mở tất cả';
+      if (btn) btn.textContent = uiTr(anyClosed ? '📁 Thu gọn tất cả' : '📖 Mở tất cả');
     };
 
     const toolbar = h('div', { class: 'acc-toolbar', style: { margin: '2px 0 4px 0' } },
@@ -18697,6 +18914,7 @@ function knowledgeTabView() {
         h('p', { class: 'label', style: { margin: 0 } }, 'Kiến thức Tiếng Trung')
       ),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'knowledge_tab' }),
         langSwitch()
       )
@@ -19838,29 +20056,29 @@ function createHskkTimer(prepSec, speakSec) {
       timerBadge.className = 'chip small';
       timerBadge.style.background = '#f59e0b';
       timerBadge.style.color = '#000';
-      timerBadge.textContent = '⏳ Chuẩn bị: ' + m + ':' + s;
+      timerBadge.textContent = uiTr('⏳ Chuẩn bị: ' + m + ':' + s);
       skipBtn.style.display = 'inline-block';
-      actionBtn.textContent = '⏹ Dừng';
+      actionBtn.textContent = uiTr('⏹ Dừng');
     } else if (state === 'speaking') {
       timerBadge.style.display = 'inline-block';
       timerBadge.className = 'chip small';
       timerBadge.style.background = remaining <= 10 ? 'var(--bad)' : 'var(--teal)';
       timerBadge.style.color = '#fff';
-      timerBadge.textContent = '🎙️ Đang nói: ' + m + ':' + s;
+      timerBadge.textContent = uiTr('🎙️ Đang nói: ' + m + ':' + s);
       skipBtn.style.display = 'none';
-      actionBtn.textContent = '⏹ Dừng';
+      actionBtn.textContent = uiTr('⏹ Dừng');
     } else if (state === 'done') {
       timerBadge.style.display = 'inline-block';
       timerBadge.className = 'chip good small';
       timerBadge.style.background = '';
       timerBadge.style.color = '';
-      timerBadge.textContent = '✓ Đã hết giờ!';
+      timerBadge.textContent = uiTr('✓ Đã hết giờ!');
       skipBtn.style.display = 'none';
-      actionBtn.textContent = '↺ Bấm lại';
+      actionBtn.textContent = uiTr('↺ Bấm lại');
     } else {
       timerBadge.style.display = 'none';
       skipBtn.style.display = 'none';
-      actionBtn.textContent = '▶ Bấm giờ thi';
+      actionBtn.textContent = uiTr('▶ Bấm giờ thi');
     }
   }
 
@@ -19980,19 +20198,19 @@ function createHskkSpeakingPractice(item, curData, targetText) {
         if (ACTIVE_STOP_FN) { ACTIVE_STOP_FN(); return; }
       }
       b.classList.add('live');
-      hintEl.textContent = 'Đang nghe... Bạn hãy đọc to và rõ ràng câu trên';
+      hintEl.textContent = uiTr('Đang nghe... Bạn hãy đọc to và rõ ràng câu trên');
       try {
         const said = await tryListen('zh', (interim) => {
-          if (interim) hintEl.textContent = 'Đang nghe: “' + interim + '”';
+          if (interim) hintEl.textContent = uiTr('Đang nghe: “' + interim + '”');
         });
         b.classList.remove('live');
-        hintEl.textContent = 'Bấm micro để nói lại và nâng cao điểm';
+        hintEl.textContent = uiTr('Bấm micro để nói lại và nâng cao điểm');
         if (said) {
           handleSpeechResult(said);
         }
       } catch (err) {
         b.classList.remove('live');
-        hintEl.textContent = 'Bấm micro rồi đọc to câu trả lời bằng tiếng Trung';
+        hintEl.textContent = uiTr('Bấm micro rồi đọc to câu trả lời bằng tiếng Trung');
       }
     }
   }, icon(ICON.speak));
@@ -20125,20 +20343,20 @@ function createHskkRecorder(item) {
     isRecording = true;
     box.className = 'ielts-speak-recorder recording stack';
     recordBtn.className = 'accent mini';
-    recordBtn.textContent = '⏹ Dừng ghi âm';
+    recordBtn.textContent = uiTr('⏹ Dừng ghi âm');
     timerBadge.style.display = 'inline-block';
-    statusLabel.textContent = 'Đang ghi âm... Hãy nói to và rõ câu trả lời vào micro:';
+    statusLabel.textContent = uiTr('Đang ghi âm... Hãy nói to và rõ câu trả lời vào micro:');
     transcriptEl.style.display = 'block';
-    transcriptEl.textContent = 'Đang nhận diện giọng nói (zh-CN)...';
+    transcriptEl.textContent = uiTr('Đang nhận diện giọng nói (zh-CN)...');
     audioPlayerWrap.style.display = 'none';
 
     seconds = 0;
-    timerBadge.textContent = '● Đang ghi âm: 00:00';
+    timerBadge.textContent = uiTr('● Đang ghi âm: 00:00');
     timerInterval = setInterval(() => {
       seconds++;
       const m = String(Math.floor(seconds / 60)).padStart(2, '0');
       const s = String(seconds % 60).padStart(2, '0');
-      timerBadge.textContent = '● Đang ghi âm: ' + m + ':' + s;
+      timerBadge.textContent = uiTr('● Đang ghi âm: ' + m + ':' + s);
     }, 1000);
 
     recordedChunks = [];
@@ -20185,7 +20403,7 @@ function createHskkRecorder(item) {
           )
         );
       } else if (!recognizedText) {
-        transcriptEl.textContent = 'Đã hoàn thành lượt nói. Bạn có thể nghe lại audio bên dưới!';
+        transcriptEl.textContent = uiTr('Đã hoàn thành lượt nói. Bạn có thể nghe lại audio bên dưới!');
       }
     }).catch(() => {});
   }
@@ -20202,8 +20420,8 @@ function createHskkRecorder(item) {
     }
     box.className = 'ielts-speak-recorder stack';
     recordBtn.className = 'ghost mini';
-    recordBtn.textContent = '🔄 Ghi âm lại';
-    statusLabel.textContent = 'Đã hoàn thành ghi âm (' + seconds + 's):';
+    recordBtn.textContent = uiTr('🔄 Ghi âm lại');
+    statusLabel.textContent = uiTr('Đã hoàn thành ghi âm (' + seconds + 's):');
     timerBadge.style.display = 'none';
   }
 
@@ -20243,6 +20461,7 @@ function renderHskkExamView() {
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('p', { class: 'label', style: { margin: 0 } }, 'Phòng Luyện Thi Tiếng Trung (HSK · HSKK)'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'exam_hskk' }),
         langSwitch()
       )
@@ -20658,6 +20877,7 @@ function examTabView() {
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('p', { class: 'label', style: { margin: 0 } }, 'Phòng Luyện Thi JLPT'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'exam_tab' }),
         langSwitch()
       )
@@ -21093,9 +21313,9 @@ async function startJlptLevelExam(lv, opts = {}) {
             userAns[q.id] = oIdx;
             optBtns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === oIdx)));
             const nowAnswered = allQuestions.filter((qq) => userAns[qq.id] !== undefined).length;
-            headerChip.textContent = 'Đã chọn: ' + nowAnswered + '/' + totalQs;
+            headerChip.textContent = uiTr('Đã chọn: ' + nowAnswered + '/' + totalQs);
             const bSubmitHint = document.getElementById('jlpt_submit_hint');
-            if (bSubmitHint) bSubmitHint.textContent = 'Đã làm ' + nowAnswered + '/' + totalQs + ' câu' + (nowAnswered < totalQs ? ' (còn ' + (totalQs - nowAnswered) + ' câu chưa chọn)' : ' · Sẵn sàng nộp bài!');
+            if (bSubmitHint) bSubmitHint.textContent = uiTr('Đã làm ' + nowAnswered + '/' + totalQs + ' câu' + (nowAnswered < totalQs ? ' (còn ' + (totalQs - nowAnswered) + ' câu chưa chọn)' : ' · Sẵn sàng nộp bài!'));
             sectionDetailsEls.forEach((sd) => sd.syncChip());
           }
         },
@@ -21169,12 +21389,12 @@ async function startJlptLevelExam(lv, opts = {}) {
       const syncChip = () => {
         if (submitted) {
           const okCount = secQs.filter((q) => userAns[q.id] === q.ans).length;
-          secChip.textContent = okCount + '/' + secQs.length + ' đúng';
+          secChip.textContent = uiTr(okCount + '/' + secQs.length + ' đúng');
           secChip.className = 'chip ' + (okCount >= Math.ceil(secQs.length * 0.8) ? 'good' : 'warn');
           secChip.style.fontSize = '.72rem';
         } else {
           const ansCount = secQs.filter((q) => userAns[q.id] !== undefined).length;
-          secChip.textContent = ansCount + '/' + secQs.length + ' câu';
+          secChip.textContent = uiTr(ansCount + '/' + secQs.length + ' câu');
           secChip.className = 'chip ' + (ansCount === secQs.length ? 'good' : '');
           secChip.style.fontSize = '.72rem';
         }
@@ -22021,6 +22241,7 @@ function renderHskWrittenExamView() {
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('p', { class: 'label', style: { margin: 0 } }, 'Phòng Luyện Thi Tiếng Trung (HSK · HSKK)'),
       h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } },
+        uiLangBtn(),
         feedbackBtn({ mode: 'exam_hsk' }),
         langSwitch()
       )
@@ -22420,7 +22641,7 @@ function showSyncModal() {
       const connBtn = h('button', { class: 'primary mini block', onclick: async () => {
         const val = inp.value.trim();
         if (!val) { toast('Vui lòng dán GitHub Token.'); return; }
-        connBtn.disabled = true; connBtn.textContent = 'Đang kết nối...';
+        connBtn.disabled = true; connBtn.textContent = uiTr('Đang kết nối...');
         try {
           const res = await findOrCreateGhGist(val);
           saveGhConfig({ token: val, gistId: res.gistId, user: res.user });
@@ -22431,7 +22652,7 @@ function showSyncModal() {
         } catch (err) {
           toast(err.message || 'Lỗi kết nối GitHub.');
         } finally {
-          connBtn.disabled = false; connBtn.textContent = 'Kết nối & Tự động sao lưu';
+          connBtn.disabled = false; connBtn.textContent = uiTr('Kết nối & Tự động sao lưu');
         }
       } }, 'Kết nối & Tự động sao lưu');
 
@@ -22496,7 +22717,7 @@ function showSyncModal() {
 
   const toggleManual = h('button', { class: 'ghost small', onclick: () => {
     manualBox.hidden = !manualBox.hidden;
-    toggleManual.textContent = manualBox.hidden ? 'Nhập mã thủ công…' : 'Thu gọn ô nhập';
+    toggleManual.textContent = uiTr(manualBox.hidden ? 'Nhập mã thủ công…' : 'Thu gọn ô nhập');
     if (!manualBox.hidden) setTimeout(() => manualInp.focus(), 50);
   } }, 'Nhập mã thủ công…');
 
@@ -22525,7 +22746,7 @@ function showSyncModal() {
       if (ok) close();
       else {
         manualBox.hidden = false;
-        toggleManual.textContent = 'Thu gọn ô nhập';
+        toggleManual.textContent = uiTr('Thu gọn ô nhập');
         setTimeout(() => manualInp.focus(), 50);
       }
     } },
@@ -22679,7 +22900,7 @@ function showFeedbackModal(customCtx) {
     style: { color: 'var(--teal)' },
     onclick: async () => {
       autoGhBtn.disabled = true;
-      autoGhBtn.textContent = 'Đang gửi lên GitHub...';
+      autoGhBtn.textContent = uiTr('Đang gửi lên GitHub...');
       try {
         const tagObj = TAGS.find(t => t.id === selectedTag) || TAGS[0];
         const title = `[Báo lỗi] ${tagObj.label.replace(/^.+?\s/, '')} - ${locText.split('·')[0].trim()}`;
@@ -22704,7 +22925,7 @@ function showFeedbackModal(customCtx) {
         statusArea.innerHTML = `<span style="color:#ef4444">Không thể kết nối GitHub: ${e.message}</span>`;
       } finally {
         autoGhBtn.disabled = false;
-        autoGhBtn.textContent = '🚀 Gửi thẳng qua GitHub Token đã lưu';
+        autoGhBtn.textContent = uiTr('🚀 Gửi thẳng qua GitHub Token đã lưu');
       }
     }
   }, '🚀 Gửi thẳng qua GitHub Token đã lưu') : null;
@@ -22802,7 +23023,7 @@ function progressView() {
   const t = todayN(), days = Array.from({ length: 7 }, (_, i) => t - 6 + i);
   const xd = (d) => xpOf(d, S.lang);
   const max = Math.max(goal(), ...days.map(xd));
-  const wd = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const wd = uiWeekdays();
   const total = Object.values(S.days).reduce((a, b) => a + b, 0);
   const perLang = Object.entries(LANGS).filter(([c]) => c !== S.lang).map(([c, v]) => {
     const keys = Object.keys(S.srs).filter((k) => k.startsWith(c + ':'));
@@ -22817,7 +23038,7 @@ function progressView() {
   const smartSchedCheck = h('input', { type: 'checkbox', id: 'smartSched', checked: S.smartSchedule !== false, onchange: (e) => { S.smartSchedule = e.target.checked; save(); toast('Đã cập nhật chế độ lộ trình.'); progressView(); } });
   let confirmReset = false;
   const resetBtn = h('button', { class: 'ghost block', onclick: async () => {
-    if (!confirmReset) { confirmReset = true; resetBtn.textContent = 'Bấm lần nữa để xóa toàn bộ tiến độ học Tiếng Trung'; return; }
+    if (!confirmReset) { confirmReset = true; resetBtn.textContent = uiTr('Bấm lần nữa để xóa toàn bộ tiến độ học Tiếng Trung'); return; }
     const resetTime = Date.now();
     S = fresh();
     S.delAll = resetTime;
@@ -22834,7 +23055,7 @@ function progressView() {
   mount(h('div', { class: 'stack-lg' },
     h('div', { class: 'row between', style: { alignItems: 'center' } },
       h('h1', {}, 'Tiến độ'),
-      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, syncButton(), feedbackBtn({ mode: 'progress' }), langSwitch())
+      h('div', { class: 'row', style: { gap: '6px', alignItems: 'center' } }, syncButton(), uiLangBtn(), feedbackBtn({ mode: 'progress' }), langSwitch())
     ),
     h('div', { class: 'stats' },
       h('div', { class: 'stat' }, h('b', {}, streak(c0)), h('span', {}, 'chuỗi ngày · dài nhất ' + longest(c0))),
@@ -22855,6 +23076,7 @@ function progressView() {
       chips: [h('span', { class: 'chip good' }, ACH.filter(([code]) => S.ach[code]).length + '/' + ACH.length)],
       body: [h('div', { class: 'badges' }, ACH.map(([code, title, desc]) => h('div', { class: 'badge' + (S.ach[code] ? '' : ' off') }, h('b', {}, title), h('p', { class: 'small muted' }, desc))))]
     }),
+    uiLangSettingPanel(),
     themeSettingPanel(),
     accordionItem({
       cls: 'acc-card',

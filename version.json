@@ -1,5 +1,5 @@
 {
-  "version": "4.07",
-  "build": "20261127-0452",
-  "message": "Đổi toàn bộ nhãn XP sang thời gian thực học (phút/giây) và bỏ cộng nhầm phút khi luyện nói"
+  "version": "4.08",
+  "build": "20261127-1655",
+  "message": "Thêm nút chọn ngôn ngữ hiển thị (Tiếng Việt / English / 中文 / 日本語) ở đầu trang và mục Tiến độ"
 }
