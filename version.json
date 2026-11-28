@@ -1,5 +1,5 @@
 {
-  "version": "4.13",
-  "build": "20261127-2220",
-  "message": "Sửa lỗi hội thoại nhiều giọng nhân vật, thêm nút loa đọc câu ví dụ & bỏ từ 'Bạn nói...' trong câu trắc nghiệm"
+  "version": "4.14",
+  "build": "20261127-2338",
+  "message": "Đặt nút Đồng bộ ngay cạnh nút Lộ trình trên tất cả các tab"
 }
