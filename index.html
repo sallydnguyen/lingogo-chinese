@@ -25,7 +25,7 @@
   applyTheme();
   (function () {
     try {
-      var u = localStorage.getItem('lingogo-ui-lang') || 'vi';
+      var u = localStorage.getItem('lingogo-ui-lang-zh') || 'vi';
       var map = { vi: 'vi', en: 'en', zh: 'zh-Hans', ja: 'ja' };
       if (!map[u]) u = 'vi';
       document.documentElement.dataset.uiLang = u;
@@ -1481,7 +1481,7 @@ input.ielts-inline-input {
    Dữ liệu bài học nằm trong data/<ngôn ngữ>.json (tải khi cần), âm thanh thu sẵn
    trong audio/, nét chữ trong data/strokes-<zh|ja>.json.
    ===================================================================== */
-const APP_BUILD_ID = '20261127-2020';
+const APP_BUILD_ID = '20261127-2030';
 const LANGS = {
   zh: { label: '中文', vi: 'Tiếng Trung', short: 'Trung', folder: '', tts: 'zh-CN', rec: 'zh-CN', lang: 'zh-Hans', cjk: true },
 };
@@ -3289,7 +3289,7 @@ const dueIn = (code, d = todayN()) => {
 // ===== Tiện ích giao diện =====
 
 // ===== ĐA NGÔN NGỮ GIAO DIỆN (VI / EN / ZH / JA) =====
-const UI_LANG_KEY = 'lingogo-ui-lang';
+const UI_LANG_KEY = 'lingogo-ui-lang-zh';
 const UI_LANGS = {
   vi: { flag: '🇻🇳', short: 'VI', name: 'Tiếng Việt', html: 'vi' },
   en: { flag: '🇬🇧', short: 'EN', name: 'English', html: 'en' },
@@ -7012,7 +7012,7 @@ function homeView(opts = {}) {
     topicsNode,
     catExamCard,
     metaFooterCard,
-    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.10 · Hoàn thiện dịch đa ngôn ngữ UI')));
+    h('p', { class: 'small muted center', style: { margin: '12px 0', fontSize: '.76rem', opacity: .65 } }, 'Lingogo Chinese v4.11 · Hoàn thiện dịch đa ngôn ngữ UI')));
   if (_keepY != null) window.scrollTo(0, _keepY);
 }
 
