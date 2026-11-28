@@ -1,5 +1,5 @@
 {
   "version": "4.08",
-  "build": "20261127-1655",
-  "message": "Thêm nút chọn ngôn ngữ hiển thị (Tiếng Việt / English / 中文 / 日本語) ở đầu trang và mục Tiến độ"
+  "build": "20261127-1715",
+  "message": "Hoàn thiện dịch đa ngôn ngữ (VI / EN / 中文 / 日本語) cho toàn bộ Section, Unit, tiêu đề bài, Luyện tập, Luyện thi, Lộ trình & Tiến độ"
 }
